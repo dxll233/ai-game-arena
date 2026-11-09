@@ -1,0 +1,474 @@
+/* ============ 《墨影 · 守夜人》界面样式（第二轮：宣纸亮色主题） ============ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #1c1712;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  color: #2c2118;
+  user-select: none;
+}
+
+#game-wrap {
+  position: relative;
+  width: min(100vw, 160vh);
+  height: min(62.5vw, 100vh);
+  margin: 0 auto;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #eee2c6;
+  cursor: crosshair;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------------- HUD ---------------- */
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+}
+
+#hud-top {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+#hp-wrap {
+  position: relative;
+  flex: 0 0 240px;
+  height: 20px;
+  background: rgba(252, 246, 232, 0.9);
+  border: 1px solid rgba(60, 42, 20, 0.55);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#hp-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #b83224, #d8552e);
+  transition: width 0.18s ease;
+}
+
+#hp-bar.low {
+  background: linear-gradient(90deg, #9c1c14, #c43226);
+  animation: pulse 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to { opacity: 0.6; }
+}
+
+#hp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #2c2118;
+}
+
+#timer {
+  font-size: 30px;
+  letter-spacing: 3px;
+  color: #3a2c1c;
+  text-shadow: 0 1px 4px rgba(255, 250, 238, 0.9);
+}
+
+#kills {
+  margin-left: auto;
+  font-size: 17px;
+  letter-spacing: 2px;
+  color: #4a3a28;
+  text-shadow: 0 1px 3px rgba(255, 250, 238, 0.9);
+}
+
+#boss-hp-wrap {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46%;
+  text-align: center;
+}
+
+#boss-name {
+  font-size: 15px;
+  letter-spacing: 4px;
+  color: #a8203c;
+  text-shadow: 0 1px 4px rgba(255, 250, 238, 0.9);
+  margin-bottom: 4px;
+}
+
+#boss-hp-outer {
+  height: 12px;
+  background: rgba(252, 246, 232, 0.9);
+  border: 1px solid rgba(160, 32, 56, 0.6);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#boss-hp-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #a02040, #e04a62);
+  transition: width 0.2s ease;
+}
+
+#hud-bottom {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#level-badge {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  background: rgba(252, 246, 232, 0.9);
+  border: 1px solid rgba(140, 90, 20, 0.6);
+  border-radius: 4px;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #7a4a10;
+}
+
+#xp-wrap {
+  flex: 1 1 auto;
+  height: 14px;
+  background: rgba(252, 246, 232, 0.9);
+  border: 1px solid rgba(60, 42, 20, 0.5);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+#xp-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #6a48b0, #9a72e0);
+  transition: width 0.15s ease;
+}
+
+#weapon-icons {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.wicon {
+  padding: 4px 10px;
+  background: rgba(252, 246, 232, 0.9);
+  border: 1px solid rgba(140, 90, 20, 0.55);
+  border-radius: 4px;
+  font-size: 14px;
+  color: #7a4a10;
+  letter-spacing: 1px;
+}
+
+.wicon i {
+  font-style: normal;
+  margin-left: 5px;
+  color: #b83224;
+  font-size: 12px;
+}
+
+.wicon em {
+  font-style: normal;
+  margin-left: 4px;
+  color: #d8641c;
+  font-size: 12px;
+}
+
+#mute-flag {
+  position: absolute;
+  top: 16px;
+  right: 130px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #6b5844;
+}
+
+/* ---------------- 横幅 ---------------- */
+
+#banner {
+  position: absolute;
+  top: 22%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 42px;
+  letter-spacing: 10px;
+  text-shadow: 0 2px 12px rgba(255, 250, 238, 0.95);
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  z-index: 30;
+}
+
+#banner.show {
+  animation: bannerIn 2.2s ease forwards;
+}
+
+@keyframes bannerIn {
+  0%   { opacity: 0; transform: scale(0.85); }
+  12%  { opacity: 1; transform: scale(1.02); }
+  75%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
+/* ---------------- 屏幕（标题/升级/暂停/胜利/结算） ---------------- */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(244, 236, 218, 0.94);
+  backdrop-filter: blur(3px);
+  z-index: 20;
+  text-align: center;
+  padding: 20px;
+}
+
+.screen h1 {
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 64px;
+  letter-spacing: 14px;
+  color: #2c2118;
+  text-shadow: 0 6px 30px rgba(160, 100, 30, 0.35);
+}
+
+.screen h2 {
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 38px;
+  letter-spacing: 8px;
+  color: #2c2118;
+}
+
+.subtitle {
+  font-size: 17px;
+  letter-spacing: 4px;
+  color: #6b5844;
+}
+
+.controls {
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #4a3a28;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(90, 66, 32, 0.28);
+  border-radius: 10px;
+  padding: 18px 34px;
+}
+
+.controls b {
+  color: #a2540e;
+  font-weight: normal;
+}
+
+.hint {
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #8a7660;
+}
+
+.btn {
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 22px;
+  letter-spacing: 6px;
+  padding: 12px 46px;
+  color: #241a10;
+  background: linear-gradient(180deg, #e8b96e, #c98c3e);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(160, 100, 30, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(160, 100, 30, 0.5);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #5a4630;
+  border: 1px solid rgba(90, 66, 32, 0.45);
+  box-shadow: none;
+  font-size: 17px;
+  padding: 9px 30px;
+}
+
+.btn-ghost:hover {
+  box-shadow: none;
+  background: rgba(120, 90, 40, 0.1);
+}
+
+.btn-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* ---------------- 升级卡片 ---------------- */
+
+#cards {
+  display: flex;
+  gap: 20px;
+  margin: 6px 0;
+}
+
+.card {
+  position: relative;
+  width: 218px;
+  min-height: 240px;
+  padding: 22px 18px 18px;
+  background: linear-gradient(170deg, #fdf8ec, #f0e2c4);
+  border: 1px solid rgba(120, 80, 30, 0.5);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  border-color: #b06818;
+  box-shadow: 0 14px 34px rgba(150, 95, 25, 0.32);
+}
+
+.card-key {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  line-height: 22px;
+  border: 1px solid rgba(140, 90, 20, 0.6);
+  border-radius: 4px;
+  font-size: 13px;
+  color: #8a4a12;
+}
+
+.card-icon {
+  width: 66px;
+  height: 66px;
+  margin: 6px auto 12px;
+  line-height: 66px;
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 34px;
+  color: #8a4a12;
+  background: radial-gradient(circle, rgba(190, 130, 50, 0.22), rgba(190, 130, 50, 0.05));
+  border: 1px solid rgba(140, 90, 20, 0.45);
+  border-radius: 50%;
+}
+
+.card-name {
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: #2c2118;
+}
+
+.card-lv {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #6a4db8;
+}
+
+.card-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #5a4a34;
+}
+
+/* ---------------- 胜利 / 结算 ---------------- */
+
+#victory-stats, #over-stats {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(90, 66, 32, 0.25);
+  border-radius: 10px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+  letter-spacing: 2px;
+  color: #5a4a34;
+}
+
+.stat-row b {
+  color: #2c2118;
+  font-weight: normal;
+}
+
+.stat-row.win b {
+  color: #b0681a;
+}
+
+.stat-row.best {
+  color: #8a7660;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.stat-row.best b {
+  color: #6b5844;
+}
+
+#new-record {
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 24px;
+  letter-spacing: 6px;
+  color: #b0681a;
+  animation: pulse 0.7s infinite alternate;
+}

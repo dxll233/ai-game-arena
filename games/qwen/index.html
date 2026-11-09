@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>问道2048·修仙录</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141b23'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%23e8c15a' stroke-width='3'/%3E%3Ctext x='32' y='43' font-size='28' text-anchor='middle' fill='%23f5d77a' font-family='KaiTi,STKaiti,serif'%3E%E9%81%93%3C/text%3E%3C/svg%3E">
+<style>
+  :root { --cell: 90px; --gold: #e8c15a; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: radial-gradient(1200px 800px at 50% -10%, #22303e 0%, #141b23 45%, #0b0f14 100%);
+    color: #dce4ec;
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 16px;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  #app { width: min(94vw, 440px); }
+
+  /* ---------- 头部 ---------- */
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  h1 {
+    font-size: 26px; letter-spacing: 2px; font-weight: 700;
+    font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+    background: linear-gradient(180deg, #f7dd8a, #c9962e);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 .sub { font-size: 15px; letter-spacing: 4px; }
+  .scores { margin-left: auto; display: flex; gap: 8px; }
+  .score-box {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(232,193,90,.25);
+    border-radius: 10px; padding: 5px 12px; text-align: center; min-width: 72px;
+  }
+  .score-box .label { font-size: 12px; color: #9fb0c0; letter-spacing: 3px; }
+  .score-box .val { font-size: 19px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+  /* 模式切换 */
+  .mode-tabs { display: flex; gap: 8px; width: 100%; }
+  .tab {
+    flex: 1; padding: 8px 0; border-radius: 10px; font-size: 15px; letter-spacing: 4px;
+    border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: #9fb0c0;
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .tab.active { border-color: rgba(232,193,90,.55); background: rgba(232,193,90,.12); color: #f0d99a; }
+
+  /* 挑战信息条 */
+  .challenge-info {
+    width: 100%; display: flex; gap: 8px; align-items: center; justify-content: space-between;
+    background: rgba(120,90,220,.10); border: 1px solid rgba(150,110,240,.35);
+    border-radius: 10px; padding: 6px 12px; font-size: 13px; color: #cbb8f5;
+  }
+  .challenge-info .ch-moves { color: #ffd97a; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hidden { display: none !important; }
+
+  /* 法术栏 */
+  .spell-bar { display: flex; gap: 8px; width: 100%; align-items: stretch; }
+  .lingqi-box {
+    display: flex; align-items: center; gap: 4px; padding: 0 10px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(120,200,255,.25); border-radius: 10px;
+  }
+  .lingqi-box .lq-label { font-size: 12px; color: #8fb8d8; letter-spacing: 2px; margin-right: 2px; }
+  .lq { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.12); }
+  .lq.on { background: radial-gradient(circle at 35% 35%, #bfeaff, #3fa9f5); box-shadow: 0 0 6px rgba(90,190,255,.8); }
+  .spell-btn { flex: 1; padding: 8px 0; font-size: 13px; letter-spacing: 1px; border-radius: 10px; cursor: pointer;
+    border: 1px solid rgba(150,110,240,.45); background: rgba(150,110,240,.10); color: #d6c4fa; transition: background .15s; }
+  .spell-btn:hover:not(:disabled) { background: rgba(150,110,240,.22); }
+  button:disabled { opacity: .38; cursor: default; }
+
+  .controls { display: flex; gap: 8px; width: 100%; }
+  .controls button {
+    flex: 1; padding: 8px 0; border-radius: 10px;
+    border: 1px solid rgba(232,193,90,.4);
+    background: rgba(232,193,90,.08); color: #f0d99a;
+    font-size: 14px; letter-spacing: 3px; cursor: pointer; transition: background .15s;
+  }
+  .controls button:hover:not(:disabled) { background: rgba(232,193,90,.18); }
+
+  /* ---------- 棋盘 ---------- */
+  #board {
+    position: relative; width: 100%;
+    background: #1d2630; border-radius: 14px;
+    border: 1px solid rgba(232,193,90,.18);
+    box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    touch-action: none; overflow: hidden;
+  }
+  .cell { position: absolute; background: rgba(255,255,255,.055); border-radius: 8px; }
+  #tiles { position: absolute; inset: 0; }
+
+  .tile { position: absolute; left: 0; top: 0; transition: transform 120ms ease-in-out; will-change: transform; }
+  .tile-inner {
+    width: 100%; height: 100%; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .tile-inner .realm {
+    font-size: calc(var(--cell) * 0.30); font-weight: 700; line-height: 1.1; letter-spacing: 2px;
+    font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  }
+  .tile-inner .num { font-size: calc(var(--cell) * 0.15); opacity: .72; line-height: 1; }
+
+  /* 境界配色：由凡入仙 */
+  .t2    { background: #4a5a6a; color: #e3edf5; }
+  .t4    { background: #3e7466; color: #e2f3ec; }
+  .t8    { background: #a9742c; color: #fff4dd; }
+  .t16   { background: #b05a30; color: #ffe9dc; }
+  .t32   { background: #a83e52; color: #ffe2e9; }
+  .t64   { background: #8b3a8f; color: #f4e2ff; }
+  .t128  { background: #5f3bb5; color: #e9dfff; box-shadow: 0 0 14px rgba(120,80,220,.35); }
+  .t256  { background: #3d49c4; color: #dfe4ff; box-shadow: 0 0 14px rgba(80,100,240,.4); }
+  .t512  { background: linear-gradient(135deg, #6d2fae, #9b4fd6); color: #f3e6ff; box-shadow: 0 0 18px rgba(160,90,230,.5); }
+  .t1024 { background: linear-gradient(135deg, #2b7fd4, #54c0e8); color: #eaf7ff; box-shadow: 0 0 18px rgba(80,180,240,.55); }
+  .t2048 { background: linear-gradient(135deg, #c9962e, #f7d774); color: #4a3208; box-shadow: 0 0 26px rgba(240,200,100,.7); }
+  .tmax  { background: linear-gradient(135deg, #f7d774, #ff9d3a, #e05fa0); color: #fff; box-shadow: 0 0 30px rgba(255,180,120,.8); }
+
+  .tile-inner.appear { animation: appear 200ms ease 80ms backwards; }
+  .tile-inner.pop { animation: pop 240ms ease; }
+  .tile.burning { animation: burn 180ms ease forwards; }
+  @keyframes appear { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pop { 0% { transform: scale(0); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
+  @keyframes burn { to { transform: scale(0) rotate(45deg); opacity: 0; } }
+
+  /* 突破飘字 */
+  #toast {
+    position: absolute; left: 50%; top: 42%;
+    transform: translate(-50%, -50%) scale(.8);
+    font-size: 30px; font-weight: 700; letter-spacing: 6px; white-space: nowrap;
+    color: #ffd97a; text-shadow: 0 0 18px rgba(255,200,90,.8);
+    opacity: 0; pointer-events: none; z-index: 20;
+    font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  }
+  #toast.show { animation: toastAnim 1.5s ease forwards; }
+  @keyframes toastAnim {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.7); }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+    30%  { transform: translate(-50%, -50%) scale(1); }
+    75%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.05); }
+  }
+
+  .hint { margin-top: 12px; text-align: center; font-size: 12px; color: #7d8b99; letter-spacing: 1px; }
+
+  /* ---------- 结算遮罩 ---------- */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(6,9,13,.72);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+  }
+  .overlay-card {
+    background: linear-gradient(180deg, #232d39, #171e27);
+    border: 1px solid rgba(232,193,90,.4); border-radius: 16px;
+    padding: 30px 36px; text-align: center; max-width: 86vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  .overlay-card h2 {
+    font-size: 28px; letter-spacing: 6px; margin-bottom: 10px; color: #f5d77a;
+    font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  }
+  .overlay-card p { color: #a8b6c4; font-size: 14px; margin-bottom: 20px; line-height: 1.7; }
+  .overlay-btns { display: flex; gap: 10px; }
+  .overlay-btns button {
+    flex: 1; min-width: 110px; padding: 9px 6px; border-radius: 10px;
+    border: 1px solid rgba(232,193,90,.4); background: rgba(232,193,90,.08);
+    color: #f0d99a; font-size: 14px; letter-spacing: 2px; cursor: pointer;
+  }
+  .overlay-btns button:hover { background: rgba(232,193,90,.18); }
+
+  /* ---------- 试炼秘境面板 ---------- */
+  #challengePanel {
+    position: fixed; inset: 0; background: rgba(6,9,13,.78);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; z-index: 40; padding: 14px;
+  }
+  .panel-card {
+    background: linear-gradient(180deg, #232d39, #151c25);
+    border: 1px solid rgba(150,110,240,.4); border-radius: 16px;
+    padding: 22px 22px 18px; width: min(94vw, 460px); max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  .panel-card h2 {
+    font-size: 24px; letter-spacing: 8px; text-align: center; margin-bottom: 4px; color: #d6c4fa;
+    font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  }
+  .panel-sub { text-align: center; font-size: 12px; color: #7d8b99; margin-bottom: 14px; }
+  .ch-item {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .ch-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .ch-name { font-size: 15px; font-weight: 700; color: #e8ddfa; letter-spacing: 1px; }
+  .ch-badge { font-size: 11px; padding: 2px 8px; border-radius: 8px; letter-spacing: 1px; }
+  .ch-badge.done { background: rgba(232,193,90,.16); border: 1px solid rgba(232,193,90,.5); color: #f0d99a; }
+  .ch-badge.todo { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); color: #8b98a5; }
+  .ch-desc { font-size: 12px; color: #93a1ae; line-height: 1.6; margin-bottom: 8px; }
+  .ch-enter {
+    width: 100%; padding: 7px 0; border-radius: 8px; font-size: 13px; letter-spacing: 3px; cursor: pointer;
+    border: 1px solid rgba(150,110,240,.45); background: rgba(150,110,240,.12); color: #d6c4fa;
+  }
+  .ch-enter:hover { background: rgba(150,110,240,.25); }
+  .panel-close {
+    width: 100%; margin-top: 6px; padding: 9px 0; border-radius: 10px; font-size: 14px; letter-spacing: 4px; cursor: pointer;
+    border: 1px solid rgba(232,193,90,.4); background: rgba(232,193,90,.08); color: #f0d99a;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>问道2048<span class="sub">·修仙录</span></h1>
+    <div class="scores">
+      <div class="score-box"><div class="label">修 为</div><div class="val" id="score">0</div></div>
+      <div class="score-box"><div class="label">巅 峰</div><div class="val" id="best">0</div></div>
+    </div>
+    <div class="mode-tabs">
+      <button id="tabClassic" class="tab active">经典修仙</button>
+      <button id="tabChallenge" class="tab">试炼秘境</button>
+    </div>
+    <div id="challengeInfo" class="challenge-info hidden">
+      <span id="chName"></span>
+      <span id="chGoal"></span>
+      <span id="chMoves" class="ch-moves"></span>
+    </div>
+    <div class="spell-bar">
+      <div class="lingqi-box" title="灵气：施展法术的资粮，每局固定3点，不随撤销之外的途径恢复">
+        <span class="lq-label">灵气</span><span id="lqDots"></span>
+      </div>
+      <button id="spellShiftBtn" class="spell-btn" title="消耗1灵气：随机重排场上所有牌（不改数值），施展后调息2步">乾坤挪移·1灵</button>
+      <button id="spellDissolveBtn" class="spell-btn" title="消耗2灵气：移除场上一张最小的牌，施展后调息3步，至少需2张牌">焚天化劫·2灵</button>
+    </div>
+    <div class="controls">
+      <button id="undoBtn">时光倒流</button>
+      <button id="restartBtn">重启轮回</button>
+    </div>
+  </header>
+
+  <div id="board">
+    <div id="cells"></div>
+    <div id="tiles"></div>
+    <div id="toast"></div>
+  </div>
+
+  <p class="hint" id="hintText">方向键 / WASD / 滑动棋盘 · 合成相同境界，直至飞升成仙</p>
+</div>
+
+<!-- 试炼秘境选关面板 -->
+<div id="challengePanel" class="hidden">
+  <div class="panel-card">
+    <h2>试 炼 秘 境</h2>
+    <p class="panel-sub">六方洞天，各有因果 · 通关记录与经典纪录分开保存</p>
+    <div id="chList"></div>
+    <button id="chClose" class="panel-close">返回洞天</button>
+  </div>
+</div>
+
+<!-- 结算遮罩 -->
+<div id="overlay" class="hidden">
+  <div class="overlay-card">
+    <h2 id="ovTitle"></h2>
+    <p id="ovText"></p>
+    <div class="overlay-btns" id="ovBtns"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 配置 ================= */
+const SIZE = 4;
+const ANIM = 130;              // 移动动画时长(ms)，与 CSS transition 对应
+const MAX_UNDO = 20;           // 撤销快照上限（第21次撤销不再响应）
+const WIN_VALUE = 2048;
+const BEST_KEY = "wd2048_best";              // 经典最高纪录（沿用 v1 键，天然兼容迁移）
+const CH_RECORD_KEY = "wd2048_challenges_v1"; // 挑战通关纪录（与经典隔离）
+const LINGQI_MAX = 3;          // 每局固定灵气
+
+// 方向向量：0上 1右 2下 3左
+const VECS = [ { dr: -1, dc: 0 }, { dr: 0, dc: 1 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 } ];
+
+// 境界表：数值 -> 名称
+const REALMS = {
+  2: "练气", 4: "筑基", 8: "金丹", 16: "元婴", 32: "化神", 64: "炼虚",
+  128: "合体", 256: "大乘", 512: "渡劫", 1024: "真仙", 2048: "金仙"
+};
+function realmName(v) { return v > 2048 ? "道祖" : (REALMS[v] || "凡人"); }
+function realmClass(v) { return v > 2048 ? "tmax" : ("t" + v); }
+
+// 法术：资源成本 + 调息（冷却，按有效移动计）
+const SPELLS = {
+  shift:    { name: "乾坤挪移", cost: 1, cooldown: 2 },
+  dissolve: { name: "焚天化劫", cost: 2, cooldown: 3 }
+};
+
+// 六盘固定挑战：固定初盘 + 固定随机种子（或禁用落子），保证可复现
+const CHALLENGES = [
+  { id: "c1", name: "试炼一·聚气成丹", goal: 64, moveLimit: null, seed: 11, spawn: true,
+    desc: "入门试炼。目标：合成「炼虚」(64)。不限步数，有落子。",
+    grid: [[2,2,4,0],[4,8,0,0],[2,4,8,0],[0,0,0,0]] },
+  { id: "c2", name: "试炼二·金丹速炼", goal: 256, moveLimit: 100, seed: 22, spawn: true,
+    desc: "目标：100步内合成「大乘」(256)。有落子。",
+    grid: [[8,8,16,0],[16,32,64,0],[8,16,32,0],[0,0,0,0]] },
+  { id: "c3", name: "试炼三·一气化三清", goal: 256, moveLimit: 30, seed: 0, spawn: false,
+    desc: "禁落子残局。目标：30步内将现有牌合成「大乘」(256)。",
+    grid: [[128,64,32,16],[8,4,2,2],[0,0,0,0],[0,0,0,0]] },
+  { id: "c4", name: "试炼四·十面埋伏", goal: 512, moveLimit: 90, seed: 44, spawn: true,
+    desc: "散牌埋伏。目标：90步内合成「渡劫」(512)。有落子。",
+    grid: [[64,32,16,8],[8,16,32,64],[128,64,0,0],[0,0,0,0]] },
+  { id: "c5", name: "试炼五·渡劫生死局", goal: 1024, moveLimit: 80, seed: 55, spawn: true,
+    desc: "高阶残局。目标：80步内合成「真仙」(1024)。有落子。",
+    grid: [[256,128,64,32],[64,128,256,16],[16,32,64,8],[0,0,0,0]] },
+  { id: "c6", name: "试炼六·飞升之路", goal: 2048, moveLimit: 160, seed: 66, spawn: true,
+    desc: "终极试炼。目标：160步内合成「金仙」(2048)。有落子。",
+    grid: [[512,512,256,128],[256,128,64,32],[0,0,0,0],[0,0,0,0]] }
+];
+
+/* ================= 可注入种子的随机源（确定性） ================= */
+const Random = {
+  state: 1,
+  seed(s) { this.state = (s >>> 0) || 1; },
+  next() { // mulberry32
+    let t = (this.state = (this.state + 0x6D2B79F5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+};
+
+/* ================= 状态 ================= */
+let grid;                 // grid[r][c] = Tile | null
+let score = 0;
+let best = loadBest();
+let mode = "classic";     // "classic" | "c1".."c6"
+let movesLeft = null;     // 限步挑战的剩余步数
+let movesUsed = 0;        // 本局已用步数
+let lingqi = LINGQI_MAX;  // 灵气资源
+let cdShift = 0, cdDissolve = 0; // 法术调息（剩余冷却移动数）
+let over = false;         // 结算中，锁定输入
+let animating = false;    // 动画锁（表现层）
+let wonShown = false;     // 是否已弹过飞升结算
+let keepPlaying = false;  // 胜利后选择继续
+let highest = 0;          // 本局最高境界（突破飘字用）
+let history = [];         // 撤销快照栈
+let officialRun = true;   // 正式局标志；调试入口会置假，阻止写入纪录/存档
+let tileId = 0;
+
+function Tile(row, col, value) {
+  this.id = ++tileId;
+  this.row = row; this.col = col; this.value = value;
+  this.el = null;
+  this.mergedThisTurn = false;
+}
+function currentChallenge() {
+  return mode === "classic" ? null : CHALLENGES.find(c => c.id === mode);
+}
+
+/* ================= DOM 引用 ================= */
+const boardEl = document.getElementById("board");
+const cellsEl = document.getElementById("cells");
+const tilesEl = document.getElementById("tiles");
+const toastEl = document.getElementById("toast");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const overlayEl = document.getElementById("overlay");
+const ovTitleEl = document.getElementById("ovTitle");
+const ovTextEl = document.getElementById("ovText");
+const ovBtnsEl = document.getElementById("ovBtns");
+const panelEl = document.getElementById("challengePanel");
+const chListEl = document.getElementById("chList");
+const challengeInfoEl = document.getElementById("challengeInfo");
+const chNameEl = document.getElementById("chName");
+const chGoalEl = document.getElementById("chGoal");
+const chMovesEl = document.getElementById("chMoves");
+const tabClassicEl = document.getElementById("tabClassic");
+const tabChallengeEl = document.getElementById("tabChallenge");
+const spellShiftBtnEl = document.getElementById("spellShiftBtn");
+const spellDissolveBtnEl = document.getElementById("spellDissolveBtn");
+const undoBtnEl = document.getElementById("undoBtn");
+const restartBtnEl = document.getElementById("restartBtn");
+const hintTextEl = document.getElementById("hintText");
+
+/* ================= 布局 ================= */
+let cellSize = 90, gap = 10;
+
+function layout() {
+  const w = boardEl.clientWidth;
+  boardEl.style.height = w + "px";
+  gap = Math.max(8, Math.round(w * 0.03));
+  cellSize = (w - gap * (SIZE + 1)) / SIZE;
+  boardEl.style.setProperty("--cell", cellSize + "px");
+  const cells = cellsEl.children;
+  for (let i = 0; i < cells.length; i++) {
+    const r = (i / SIZE) | 0, c = i % SIZE;
+    const el = cells[i];
+    el.style.width = el.style.height = cellSize + "px";
+    const p = posOf(r, c);
+    el.style.transform = "translate(" + p.x + "px," + p.y + "px)";
+  }
+  if (grid) eachTile(t => positionTile(t));
+}
+function posOf(r, c) {
+  return { x: gap + c * (cellSize + gap), y: gap + r * (cellSize + gap) };
+}
+function positionTile(t) {
+  if (!t.el) return;
+  t.el.style.width = t.el.style.height = cellSize + "px";
+  const p = posOf(t.row, t.col);
+  t.el.style.transform = "translate(" + p.x + "px," + p.y + "px)";
+}
+function eachTile(fn) {
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (grid[r][c]) fn(grid[r][c]);
+}
+
+/* ================= 渲染 ================= */
+function createTileEl(tile, anim) {
+  const el = document.createElement("div");
+  el.className = "tile";
+  const inner = document.createElement("div");
+  inner.className = "tile-inner " + realmClass(tile.value) + (anim ? (" " + anim) : "");
+  const realm = document.createElement("span");
+  realm.className = "realm";
+  realm.textContent = realmName(tile.value);
+  const num = document.createElement("span");
+  num.className = "num";
+  num.textContent = tile.value;
+  inner.appendChild(realm);
+  inner.appendChild(num);
+  el.appendChild(inner);
+  tilesEl.appendChild(el);
+  tile.el = el;
+  positionTile(tile);
+}
+function rebuildDomFromGrid() {
+  tilesEl.innerHTML = "";
+  eachTile(t => createTileEl(t, null));
+}
+
+function updateScoreUI() {
+  scoreEl.textContent = score;
+  bestEl.textContent = best;
+}
+/* 巅峰为跨局数据：仅正式局刷新；撤销/调试/重开不回退（逻辑层保证纯逻辑路径同样生效） */
+function updateBestRecord() {
+  if (officialRun && score > best) { best = score; saveBest(); }
+}
+
+function updateSpellUI() {
+  const dots = document.getElementById("lqDots");
+  dots.innerHTML = "";
+  for (let i = 0; i < LINGQI_MAX; i++) {
+    const d = document.createElement("span");
+    d.className = "lq" + (i < lingqi ? " on" : "");
+    dots.appendChild(d);
+  }
+  spellShiftBtnEl.textContent = cdShift > 0 ? ("乾坤挪移·调息" + cdShift) : "乾坤挪移·1灵";
+  spellShiftBtnEl.disabled = lingqi < SPELLS.shift.cost || cdShift > 0 || animating || over;
+  spellDissolveBtnEl.textContent = cdDissolve > 0 ? ("焚天化劫·调息" + cdDissolve) : "焚天化劫·2灵";
+  spellDissolveBtnEl.disabled = lingqi < SPELLS.dissolve.cost || cdDissolve > 0 || animating || over;
+  undoBtnEl.disabled = animating || history.length === 0;
+}
+
+function updateChallengeInfo() {
+  const cfg = currentChallenge();
+  if (!cfg) {
+    challengeInfoEl.classList.add("hidden");
+    hintTextEl.textContent = "方向键 / WASD / 滑动棋盘 · 合成相同境界，直至飞升成仙";
+  } else {
+    challengeInfoEl.classList.remove("hidden");
+    chNameEl.textContent = cfg.name;
+    chGoalEl.textContent = "目标：" + realmName(cfg.goal) + "(" + cfg.goal + ")";
+    chMovesEl.textContent = cfg.moveLimit === null ? "不限步" : ("余 " + movesLeft + " 步");
+    hintTextEl.textContent = "方向键 / WASD / 滑动棋盘 · 完成试炼目标";
+  }
+  tabClassicEl.classList.toggle("active", mode === "classic");
+  tabChallengeEl.classList.toggle("active", mode !== "classic");
+}
+
+function refreshUI() {
+  updateScoreUI();
+  updateSpellUI();
+  updateChallengeInfo();
+}
+
+let toastTimer = null;
+function toast(text) {
+  toastEl.textContent = text;
+  toastEl.classList.remove("show");
+  void toastEl.offsetWidth; // 强制重排，重新触发动画
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1500);
+}
+
+/* ================= 音效（WebAudio 极简合成，失败自动静音） ================= */
+let audioCtx = null;
+function tone(freq, dur, type, gain) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(gain || 0.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch (e) { /* 无声降级 */ }
+}
+function soundMerge(v) { tone(240 + Math.log2(v) * 55, 0.09, "triangle", 0.12); }
+function soundWin() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.16, "sine", 0.14), i * 120)); }
+function soundLose() { tone(150, 0.35, "sawtooth", 0.07); }
+
+/* ================= 存档（按模式隔离） ================= */
+function loadBest() { try { return +localStorage.getItem(BEST_KEY) || 0; } catch (e) { return 0; } }
+function saveBest() { try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { } }
+function loadChRecords() { try { return JSON.parse(localStorage.getItem(CH_RECORD_KEY)) || {}; } catch (e) { return {}; } }
+function saveChRecords(rec) { try { localStorage.setItem(CH_RECORD_KEY, JSON.stringify(rec)); } catch (e) { } }
+function recordChallengeClear(chId, usedMoves) {
+  if (!officialRun) return; // 调试局不写通关证据
+  const rec = loadChRecords();
+  const prev = rec[chId];
+  if (!prev) rec[chId] = { cleared: true, bestMoves: usedMoves };
+  else { rec[chId].cleared = true; if (usedMoves < prev.bestMoves) rec[chId].bestMoves = usedMoves; }
+  saveChRecords(rec);
+}
+
+/* ================= 纯逻辑层 ================= */
+function emptyGrid() {
+  const g = [];
+  for (let r = 0; r < SIZE; r++) { g.push([]); for (let c = 0; c < SIZE; c++) g[r].push(null); }
+  return g;
+}
+
+function spawnTile() {
+  const empties = [];
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (!grid[r][c]) empties.push([r, c]);
+  if (!empties.length) return null;
+  const [r, c] = empties[Math.floor(Random.next() * empties.length)];
+  const t = new Tile(r, c, Random.next() < 0.9 ? 2 : 4);
+  grid[r][c] = t;
+  return t;
+}
+
+function canMove() {
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++) {
+      const t = grid[r][c];
+      if (!t) return true;
+      if (r + 1 < SIZE && grid[r + 1][c] && grid[r + 1][c].value === t.value) return true;
+      if (c + 1 < SIZE && grid[r][c + 1] && grid[r][c + 1].value === t.value) return true;
+    }
+  return false;
+}
+
+/* ---- 快照：完整局内状态一起回滚（P0） ---- */
+function captureSnapshot() {
+  return {
+    values: grid.map(row => row.map(t => (t ? t.value : 0))),
+    score: score, mode: mode,
+    wonShown: wonShown, keepPlaying: keepPlaying, highest: highest,
+    lingqi: lingqi, cdShift: cdShift, cdDissolve: cdDissolve,
+    movesLeft: movesLeft, movesUsed: movesUsed,
+    rngState: Random.state
+  };
+}
+function pushSnapshot() {
+  history.push(captureSnapshot());
+  if (history.length > MAX_UNDO) history.shift(); // 上限策略：丢弃最旧
+}
+function restoreSnapshot(snap) {
+  grid = emptyGrid();
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++) {
+      const v = snap.values[r][c];
+      if (v) grid[r][c] = new Tile(r, c, v);
+    }
+  score = snap.score; mode = snap.mode;
+  wonShown = snap.wonShown; keepPlaying = snap.keepPlaying; highest = snap.highest;
+  lingqi = snap.lingqi; cdShift = snap.cdShift; cdDissolve = snap.cdDissolve;
+  movesLeft = snap.movesLeft; movesUsed = snap.movesUsed;
+  Random.state = snap.rngState;
+  over = false;
+}
+
+// 依据方向生成遍历顺序（始终从目标边缘一侧开始）
+function buildTraversals(vec) {
+  const rows = [0, 1, 2, 3], cols = [0, 1, 2, 3];
+  if (vec.dr === 1) rows.reverse();
+  if (vec.dc === 1) cols.reverse();
+  return { rows, cols };
+}
+
+/* 纯逻辑移动：成功返回结果对象，无效返回 null（不产生任何状态变化） */
+function applyMove(dir) {
+  if (over) return null;
+  const snap = captureSnapshot(); // 必须在移动循环前捕获：循环会原地修改棋盘
+  const vec = VECS[dir];
+  const { rows, cols } = buildTraversals(vec);
+  const movedTiles = [];   // 仅位移的牌
+  const mergeEvents = [];  // 合成事件
+  let moved = false;
+
+  eachTile(t => t.mergedThisTurn = false);
+
+  for (const r of rows) {
+    for (const c of cols) {
+      const tile = grid[r][c];
+      if (!tile) continue;
+      let nr = r, nc = c;
+      for (;;) {
+        const tr = nr + vec.dr, tc = nc + vec.dc;
+        if (tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE || grid[tr][tc]) break;
+        nr = tr; nc = tc;
+      }
+      const tr = nr + vec.dr, tc = nc + vec.dc;
+      let target = null;
+      if (tr >= 0 && tr < SIZE && tc >= 0 && tc < SIZE) {
+        const other = grid[tr][tc];
+        if (other && other.value === tile.value && !other.mergedThisTurn) target = other;
+      }
+      if (target) {
+        grid[r][c] = null;
+        tile.row = target.row; tile.col = target.col;
+        const result = new Tile(target.row, target.col, tile.value * 2);
+        result.mergedThisTurn = true;      // 本回合新合成的牌不可再次合成
+        grid[target.row][target.col] = result;
+        mergeEvents.push({ a: tile, b: target, result });
+        moved = true;
+      } else if (nr !== r || nc !== c) {
+        grid[r][c] = null;
+        grid[nr][nc] = tile;
+        tile.row = nr; tile.col = nc;
+        movedTiles.push(tile);
+        moved = true;
+      }
+    }
+  }
+
+  if (!moved) return null; // 无效移动：不生成牌、不改结算状态
+
+  history.push(snap);
+  if (history.length > MAX_UNDO) history.shift(); // 上限策略：丢弃最旧
+  movesUsed++;
+  if (movesLeft !== null) movesLeft--;
+  if (cdShift > 0) cdShift--;
+  if (cdDissolve > 0) cdDissolve--;
+
+  const cfg = currentChallenge();
+  const spawned = (!cfg || cfg.spawn) ? spawnTile() : null;
+
+  let winPending = false, goalReached = false, maxValue = 0;
+  for (const m of mergeEvents) {
+    score += m.result.value;
+    if (m.result.value > highest) highest = m.result.value;
+    if (m.result.value >= WIN_VALUE && !wonShown) winPending = true;
+    if (m.result.value > maxValue) maxValue = m.result.value;
+  }
+  if (cfg && maxValue >= cfg.goal) goalReached = true;
+
+  updateBestRecord();
+  return { movedTiles, mergeEvents, spawned, winPending, goalReached, maxValue };
+}
+
+/* 结算优先级：挑战达成 > 首次2048 > 死局 > 步数耗尽（P0 集中整理） */
+function settleAfterMove(res) {
+  const cfg = currentChallenge();
+  if (cfg && res.goalReached) {
+    over = true;
+    recordChallengeClear(mode, movesUsed);
+    soundWin();
+    showOverlay("challenge-clear");
+    return;
+  }
+  if (res.winPending) {
+    wonShown = true; over = true;
+    soundWin();
+    showOverlay("win");
+    return;
+  }
+  if (!canMove()) {
+    over = true;
+    soundLose();
+    showOverlay("lose");
+    return;
+  }
+  if (cfg && cfg.moveLimit !== null && movesLeft === 0) {
+    over = true;
+    soundLose();
+    showOverlay("nomoves");
+  }
+}
+
+/* 无效移动的安全网：盘面已无合法步时必须能进入失败结算，不能被永久锁住（P0 修复） */
+function onInvalidMove() {
+  if (!over && !canMove()) {
+    over = true;
+    soundLose();
+    showOverlay("lose");
+  }
+}
+
+/* ================= 法术（有资源成本与调息边界，进入同一撤销历史） ================= */
+function applySpell(key) {
+  if (over) return null;
+  const tiles = [];
+  eachTile(t => tiles.push(t));
+  if (key === "shift") {
+    if (lingqi < SPELLS.shift.cost || cdShift > 0 || tiles.length < 2) return null;
+    pushSnapshot();
+    lingqi -= SPELLS.shift.cost;
+    cdShift = SPELLS.shift.cooldown;
+    // Fisher-Yates 洗牌 16 个格位（使用种子随机源，可撤销、可复现）
+    const cells = [];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) cells.push([r, c]);
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(Random.next() * (i + 1));
+      const tmp = cells[i]; cells[i] = cells[j]; cells[j] = tmp;
+    }
+    grid = emptyGrid();
+    tiles.forEach((t, i) => {
+      const r = cells[i][0], c = cells[i][1];
+      t.row = r; t.col = c;
+      grid[r][c] = t;
+    });
+    return { key };
+  }
+  if (key === "dissolve") {
+    if (lingqi < SPELLS.dissolve.cost || cdDissolve > 0 || tiles.length < 2) return null;
+    pushSnapshot();
+    lingqi -= SPELLS.dissolve.cost;
+    cdDissolve = SPELLS.dissolve.cooldown;
+    let min = Infinity;
+    eachTile(t => { if (t.value < min) min = t.value; });
+    const cands = [];
+    eachTile(t => { if (t.value === min) cands.push(t); });
+    const victim = cands[Math.floor(Random.next() * cands.length)];
+    grid[victim.row][victim.col] = null;
+    return { key, victim };
+  }
+  return null;
+}
+
+function castSpell(key) {
+  if (animating) return false;
+  const res = applySpell(key);
+  if (!res) return false;
+  animating = true;
+  if (res.key === "shift") {
+    eachTile(t => positionTile(t));
+    tone(330, 0.1, "sine", 0.1);
+  } else {
+    if (res.victim.el) res.victim.el.classList.add("burning");
+    tone(180, 0.2, "sawtooth", 0.07);
+  }
+  refreshUI();
+  setTimeout(() => {
+    if (res.key === "dissolve" && res.victim.el) res.victim.el.remove();
+    animating = false;
+    updateSpellUI();
+    // 重排可能产生死局：同样必须进入失败结算
+    if (!over && !canMove()) { over = true; soundLose(); showOverlay("lose"); }
+  }, ANIM + 40);
+  return true;
+}
+
+/* ================= 开局 / 重开 / 撤销 ================= */
+function resetCommonState() {
+  history = [];
+  score = 0; over = false; wonShown = false; keepPlaying = false; highest = 0;
+  lingqi = LINGQI_MAX; cdShift = 0; cdDissolve = 0;
+  movesUsed = 0;
+  hideOverlay();
+}
+
+function startClassic(official) {
+  if (animating) return;
+  officialRun = official !== false;
+  mode = "classic";
+  movesLeft = null;
+  resetCommonState();
+  Random.seed(((Date.now() & 0xffffffff) ^ Math.floor(Math.random() * 0x100000000)) >>> 0);
+  grid = emptyGrid();
+  tilesEl.innerHTML = "";
+  const a = spawnTile(), b = spawnTile();
+  createTileEl(a, "appear");
+  createTileEl(b, "appear");
+  closeChallengePanel();
+  refreshUI();
+}
+
+function startChallenge(id, official) {
+  if (animating) return;
+  const cfg = CHALLENGES.find(c => c.id === id);
+  if (!cfg) return;
+  officialRun = official !== false;
+  mode = cfg.id;
+  movesLeft = cfg.moveLimit;
+  resetCommonState();
+  Random.seed(cfg.spawn ? cfg.seed : 1);
+  grid = emptyGrid();
+  tilesEl.innerHTML = "";
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++) {
+      const v = cfg.grid[r][c];
+      if (!v) continue;
+      const t = new Tile(r, c, v);
+      grid[r][c] = t;
+      createTileEl(t, "appear");
+    }
+  closeChallengePanel();
+  refreshUI();
+}
+
+function restart() {
+  if (mode === "classic") startClassic();
+  else startChallenge(mode);
+}
+
+function undo() {
+  if (animating || !history.length) return false;
+  const snap = history.pop();
+  restoreSnapshot(snap);      // 逻辑层完整恢复（含胜利状态/灵气/随机源）
+  rebuildDomFromGrid();       // 表现层重建
+  hideOverlay();
+  refreshUI();
+  return true;
+}
+
+/* ================= 结算界面 ================= */
+function showOverlay(kind) {
+  overlayEl.dataset.kind = kind;
+  ovBtnsEl.innerHTML = "";
+  const cfg = currentChallenge();
+  if (kind === "win") {
+    ovTitleEl.textContent = "飞 升 成 仙";
+    ovTextEl.innerHTML = "你合成「金仙」，得道飞升！<br>此番修行，修为 <b style='color:#f5d77a'>" + score + "</b>";
+    addBtn("继续修行", () => {
+      over = false; keepPlaying = true; hideOverlay();
+      // P0：继续后若盘面已无合法步，立即转入失败结算，不得锁死
+      if (!canMove()) { over = true; soundLose(); showOverlay("lose"); }
+    });
+    addBtn("再入轮回", () => startClassic());
+  } else if (kind === "challenge-clear") {
+    ovTitleEl.textContent = "试 炼 达 成";
+    ovTextEl.innerHTML = "「" + cfg.name + "」通关！<br>共用 <b style='color:#f5d77a'>" + movesUsed + "</b> 步，修为 <b style='color:#f5d77a'>" + score + "</b>";
+    addBtn("再战此关", () => startChallenge(mode));
+    addBtn("返回秘境", () => { hideOverlay(); openChallengePanel(); });
+  } else if (kind === "nomoves") {
+    ovTitleEl.textContent = "劫 数 已 尽";
+    ovTextEl.innerHTML = "步数耗尽，试炼未成。<br>此番修行，修为 <b style='color:#f5d77a'>" + score + "</b>";
+    addBtn("时光倒流", () => undo());
+    addBtn("再战此关", () => startChallenge(mode));
+  } else { // lose
+    ovTitleEl.textContent = "道 消 身 陨";
+    ovTextEl.innerHTML = (cfg ? "洞天困死，试炼失败。" : "洞天已满，仙路断绝。") +
+      "<br>此番修行，修为 <b style='color:#f5d77a'>" + score + "</b>";
+    addBtn("时光倒流", () => undo());
+    addBtn(cfg ? "再战此关" : "再入轮回", () => restart());
+  }
+  overlayEl.classList.remove("hidden");
+}
+function addBtn(text, fn) {
+  const b = document.createElement("button");
+  b.textContent = text;
+  b.addEventListener("click", fn);
+  ovBtnsEl.appendChild(b);
+}
+function hideOverlay() { overlayEl.classList.add("hidden"); delete overlayEl.dataset.kind; }
+
+/* ================= 试炼秘境面板 ================= */
+function openChallengePanel() {
+  const rec = loadChRecords();
+  chListEl.innerHTML = "";
+  for (const cfg of CHALLENGES) {
+    const item = document.createElement("div");
+    item.className = "ch-item";
+    const done = rec[cfg.id] && rec[cfg.id].cleared;
+    const head = document.createElement("div");
+    head.className = "ch-head";
+    const name = document.createElement("span");
+    name.className = "ch-name";
+    name.textContent = cfg.name;
+    const badge = document.createElement("span");
+    badge.className = "ch-badge " + (done ? "done" : "todo");
+    badge.textContent = done ? ("已通关·最佳" + rec[cfg.id].bestMoves + "步") : "未通关";
+    head.appendChild(name); head.appendChild(badge);
+    const desc = document.createElement("div");
+    desc.className = "ch-desc";
+    desc.textContent = cfg.desc;
+    const enter = document.createElement("button");
+    enter.className = "ch-enter";
+    enter.textContent = "入 定 挑 战";
+    enter.addEventListener("click", () => startChallenge(cfg.id));
+    item.appendChild(head); item.appendChild(desc); item.appendChild(enter);
+    chListEl.appendChild(item);
+  }
+  panelEl.classList.remove("hidden");
+}
+function closeChallengePanel() { panelEl.classList.add("hidden"); }
+
+/* ================= 带表现层的移动入口 ================= */
+function move(dir) {
+  if (animating || over) return;
+  const highestBefore = highest;
+  const res = applyMove(dir);
+  if (!res) { onInvalidMove(); return; }
+
+  animating = true;
+  for (const t of res.movedTiles) positionTile(t);
+  for (const m of res.mergeEvents) positionTile(m.a);
+  if (highest > highestBefore) toast("突破！" + realmName(highest) + "境");
+  if (res.mergeEvents.length) soundMerge(res.mergeEvents[res.mergeEvents.length - 1].result.value);
+  refreshUI();
+
+  setTimeout(() => {
+    for (const m of res.mergeEvents) {
+      if (m.a.el) m.a.el.remove();
+      if (m.b.el) m.b.el.remove();
+      createTileEl(m.result, "pop");
+    }
+    if (res.spawned) createTileEl(res.spawned, "appear");
+    animating = false;
+    updateSpellUI();
+    settleAfterMove(res);
+  }, ANIM + 20);
+}
+
+/* ================= 输入 ================= */
+const KEY_MAP = {
+  ArrowUp: 0, KeyW: 0,
+  ArrowRight: 1, KeyD: 1,
+  ArrowDown: 2, KeyS: 2,
+  ArrowLeft: 3, KeyA: 3
+};
+document.addEventListener("keydown", e => {
+  const dir = KEY_MAP[e.code];
+  if (dir === undefined) return;
+  e.preventDefault();
+  move(dir);
+});
+
+let touchStart = null;
+boardEl.addEventListener("touchstart", e => {
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
+boardEl.addEventListener("touchend", e => {
+  if (!touchStart) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  touchStart = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+  move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+});
+
+undoBtnEl.addEventListener("click", undo);
+restartBtnEl.addEventListener("click", restart);
+spellShiftBtnEl.addEventListener("click", () => castSpell("shift"));
+spellDissolveBtnEl.addEventListener("click", () => castSpell("dissolve"));
+tabClassicEl.addEventListener("click", () => { if (mode !== "classic") startClassic(); });
+tabChallengeEl.addEventListener("click", () => openChallengePanel());
+document.getElementById("chClose").addEventListener("click", closeChallengePanel);
+window.addEventListener("resize", layout);
+
+/* ================= 调试/测试钩子（非正式：不写纪录与存档） ================= */
+function markDebug() { officialRun = false; }
+window.__wd2048 = {
+  // 纯逻辑（同步，无动画时序依赖）：applyMove+settle 构成一步完整移动
+  applyMove, settleAfterMove, canMove, undo,
+  setGrid(values) {
+    markDebug();
+    grid = emptyGrid();
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++) {
+        const v = values[r][c];
+        if (v) grid[r][c] = new Tile(r, c, v);
+      }
+    over = false;
+    rebuildDomFromGrid();
+    hideOverlay();
+    refreshUI();
+  },
+  startClassic() { markDebug(); startClassic(false); },
+  startChallenge(id) { markDebug(); startChallenge(id, false); },
+  castSpell(key) { markDebug(); return castSpell(key); },
+  applySpellRaw(key) { markDebug(); return applySpell(key); },
+  seed(s) { markDebug(); Random.seed(s); },
+  continueAfterWin() { markDebug(); over = false; keepPlaying = true; hideOverlay(); if (!canMove()) { over = true; showOverlay("lose"); } },
+  getState() {
+    return {
+      mode, score, best, over, animating, wonShown, keepPlaying, highest,
+      lingqi, cdShift, cdDissolve, movesLeft, movesUsed,
+      rngState: Random.state, officialRun, historyLen: history.length,
+      values: grid.map(row => row.map(t => (t ? t.value : 0))),
+      overlay: overlayEl.dataset.kind || null
+    };
+  }
+};
+
+/* ================= 启动 ================= */
+(function init() {
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const el = document.createElement("div");
+    el.className = "cell";
+    cellsEl.appendChild(el);
+  }
+  grid = emptyGrid();
+  layout();
+  startClassic();
+})();
+</script>
+</body>
+</html>

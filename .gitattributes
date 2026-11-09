@@ -1,0 +1,2 @@
+# Preserve the audited game bytes across platforms.
+games/** -text

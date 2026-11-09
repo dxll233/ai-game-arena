@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#07111f">
+  <title>星港守夜人 · Neon Harbor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark"></span><span>星港守夜人</span><small>NEON HARBOR</small></div>
+      <div class="top-actions">
+        <button id="soundBtn" class="icon-btn" aria-label="切换声音">声音：开</button>
+        <button id="pauseBtn" class="icon-btn" aria-label="暂停游戏">暂停</button>
+      </div>
+    </header>
+
+    <section id="gameShell" class="game-shell">
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="星港守夜人游戏画面"></canvas>
+
+      <div id="hud" class="hud hidden">
+        <div class="hud-left">
+          <div class="hud-label"><span>机体完整度</span><strong id="hpText">100 / 100</strong></div>
+          <div class="bar hp-bar"><i id="hpFill"></i></div>
+          <div class="hud-label xp-label"><span id="levelText">等级 1</span><span id="xpText">0 / 50</span></div>
+          <div class="bar xp-bar"><i id="xpFill"></i></div>
+        </div>
+        <div class="hud-center">
+          <span id="waveLabel">第 1 波</span>
+          <strong id="waveProgress">0 / 8</strong>
+        </div>
+        <div class="hud-right">
+          <span>同步积分</span>
+          <strong id="scoreText">000000</strong>
+          <small id="timeText">00:00</small>
+        </div>
+      </div>
+
+      <div id="bossHud" class="boss-hud hidden">
+        <div><span>中枢核心</span><small id="bossPhase">PHASE 01</small></div>
+        <div class="bar boss-bar"><i id="bossFill"></i></div>
+      </div>
+
+      <div id="dashHud" class="dash-hud hidden">
+        <span>SPACE</span><div><b>相位冲刺</b><small id="dashText">就绪</small></div><i id="dashRing"></i>
+      </div>
+
+      <div id="weaponHud" class="weapon-hud hidden" aria-label="武器选择">
+        <button id="weaponPulse" data-weapon="pulse" class="selected"><kbd>1</kbd><span>脉冲枪<small>精准连射</small></span></button>
+        <button id="weaponShotgun" data-weapon="shotgun"><kbd>2</kbd><span>霰弹枪<small>近距爆发</small></span></button>
+        <button id="weaponCharge" data-weapon="charge"><kbd>3</kbd><span>蓄能枪<small>按住蓄力 · 松开发射</small></span></button>
+        <div class="charge-track"><i id="chargeFill"></i></div>
+        <small id="aimAssistText">H 瞄准辅助：关</small>
+      </div>
+
+      <div id="announcement" class="announcement hidden"><small id="announceTop">WAVE 01</small><strong id="announceMain">机械潮来袭</strong><span id="announceSub">击败 8 个失控机体</span></div>
+
+      <section id="menuScreen" class="overlay menu-screen">
+        <div class="menu-decoration"><i></i><i></i><i></i></div>
+        <div class="eyebrow">NIGHT WATCH PROTOCOL // 06</div>
+        <h1>星港<br><em>守夜人</em></h1>
+        <p class="menu-subtitle">最后一座星港，最后一道防线。<br>穿越机械潮，关闭失控的中枢核心。</p>
+        <div class="arena-picker" aria-label="选择作战场地">
+          <button id="arenaHarbor" class="arena-card selected" data-arena="harbor"><span>01 / 开放泊位</span><small>无遮挡 · 经典六波防线</small></button>
+          <button id="arenaFoundry" class="arena-card" data-arena="foundry"><span>02 / 熔炉环线</span><small>实体掩体 · 周期热泄危险带</small></button>
+        </div>
+        <p class="arena-hint">点击卡片只选择场地，需再点「开始守夜」才进入战斗</p>
+        <button id="startBtn" class="primary-btn"><span>开始守夜 · 开放泊位</span><b>ENTER</b></button>
+        <div class="controls-grid">
+          <div><kbd>WASD</kbd><span>移动</span></div>
+          <div><kbd>鼠标 / J</kbd><span>瞄准 / 射击</span></div>
+          <div><kbd>1 / 2 / 3</kbd><span>切换武器</span></div>
+          <div><kbd>SPACE</kbd><span>相位冲刺</span></div>
+          <div><kbd>P / ESC</kbd><span>暂停</span></div>
+          <div><kbd>H</kbd><span>瞄准辅助</span></div>
+        </div>
+        <div class="record"><span>本机最高记录</span><strong id="bestScore">000000</strong><small id="bestWave">最佳波次 0</small></div>
+        <p class="mobile-note">触屏：摇杆移动、自动瞄准射击；右侧切换武器与冲刺，蓄能枪满蓄自动发射</p>
+      </section>
+
+      <section id="pauseScreen" class="overlay compact hidden">
+        <div class="eyebrow">SYSTEM STANDBY</div>
+        <h2>守夜暂停</h2>
+        <p>星港会等你回来。</p>
+        <button id="resumeBtn" class="primary-btn"><span>继续战斗</span><b>P</b></button>
+        <button id="pauseRestartBtn" class="text-btn">重新开始</button>
+      </section>
+
+      <section id="levelScreen" class="overlay level-screen hidden">
+        <div class="eyebrow">UPLINK ESTABLISHED</div>
+        <h2>选择一项强化</h2>
+        <p>能量同步完成 · 战场已暂停</p>
+        <div id="upgradeCards" class="upgrade-cards"></div>
+      </section>
+
+      <section id="endScreen" class="overlay compact hidden">
+        <div id="endEyebrow" class="eyebrow">SIGNAL LOST</div>
+        <h2 id="endTitle">守夜终止</h2>
+        <p id="endDesc">机体信号已消失，但星港仍会记得你。</p>
+        <div class="stats">
+          <div><span>最终积分</span><strong id="finalScore">0</strong></div>
+          <div><span>击败机体</span><strong id="finalKills">0</strong></div>
+          <div><span>同步等级</span><strong id="finalLevel">1</strong></div>
+          <div><span>坚守时间</span><strong id="finalTime">00:00</strong></div>
+        </div>
+        <div id="newRecord" class="new-record hidden">NEW PERSONAL RECORD</div>
+        <button id="restartBtn" class="primary-btn"><span>再次守夜</span><b>R</b></button>
+        <button id="menuBtn" class="text-btn">返回主界面</button>
+      </section>
+
+      <div id="touchControls" class="touch-controls hidden">
+        <div id="joystick" class="joystick"><i id="stick"></i></div>
+        <div class="touch-actions">
+          <button id="touchWeapon" class="touch-weapon">脉冲枪<small>切换武器</small></button>
+          <button id="touchDash" class="touch-dash">冲刺<small>DASH</small></button>
+        </div>
+      </div>
+      <div id="damageVignette" class="damage-vignette"></div>
+    </section>
+
+    <footer class="footer"><span>守住星港，直到黎明。</span><span>WASD 移动 · 左键射击 · 空格冲刺</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

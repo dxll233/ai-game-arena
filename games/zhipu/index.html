@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>御剑·破晓</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#04050a;
+    font-family:'KaiTi','STKaiti','DFKai-SB','BiauKai','SimKai',serif; }
+  #stage { position:absolute; left:50%; top:50%; width:1280px; height:720px;
+    transform:translate(-50%,-50%) scale(var(--s,1)); transform-origin:center; }
+  #cv { display:block; width:1280px; height:720px; background:#0b1020; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; inset:0; pointer-events:none; user-select:none; }
+  #time { position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    font-size:34px; color:#f0e6c8; letter-spacing:4px;
+    text-shadow:0 0 12px rgba(255,220,150,.55), 0 2px 4px #000; }
+  #kills { position:absolute; top:52px; left:50%; transform:translateX(-50%);
+    font-size:16px; color:#c9b98a; letter-spacing:2px; text-shadow:0 1px 3px #000; }
+  #modeTag { position:absolute; left:24px; top:14px; font-size:15px; color:#7f8ea6;
+    letter-spacing:2px; text-shadow:0 1px 2px #000; line-height:1.7; }
+  #hpBox { position:absolute; left:24px; bottom:26px; width:280px; }
+  #hpLabel { font-size:14px; color:#d8a08a; letter-spacing:3px; text-shadow:0 1px 2px #000; margin-bottom:4px; }
+  #hpBar { position:relative; height:16px; background:rgba(20,8,8,.75);
+    border:1px solid #5a2b22; border-radius:4px; overflow:hidden; }
+  #hpFill { position:absolute; left:0; top:0; bottom:0; width:100%;
+    background:linear-gradient(90deg,#8c1f1f,#d84a3a); transition:width .15s; }
+  #hpText { position:absolute; inset:0; text-align:center; font-size:12px; line-height:16px;
+    color:#ffe9e0; text-shadow:0 1px 2px #000; font-family:Arial,sans-serif; }
+  #willBox { position:absolute; left:24px; bottom:62px; font-size:15px; color:#b9a6e8;
+    letter-spacing:2px; text-shadow:0 1px 2px #000; }
+  #xpBar { position:absolute; left:0; right:0; bottom:0; height:7px; background:rgba(8,14,20,.9); }
+  #xpFill { height:100%; width:0%; background:linear-gradient(90deg,#2c7f8f,#63e6d2);
+    box-shadow:0 0 8px rgba(99,230,210,.8); transition:width .12s; }
+  #lvText { position:absolute; right:24px; bottom:24px; font-size:20px; color:#9fe8d8;
+    letter-spacing:2px; text-shadow:0 0 8px rgba(99,230,210,.6),0 1px 3px #000; }
+  #muteTag { position:absolute; right:24px; top:14px; font-size:13px; color:#5c6c85; letter-spacing:1px; }
+
+  /* ---------- 更次与剑阵指示 ---------- */
+  #phaseTag { position:absolute; top:78px; left:50%; transform:translateX(-50%);
+    font-size:13px; color:#8fa3b8; letter-spacing:3px; text-shadow:0 1px 2px #000;
+    white-space:nowrap; }
+  #phaseTag b { color:#c9b98a; font-weight:normal; }
+  #stanceBox { position:absolute; left:24px; bottom:92px; font-size:14px;
+    letter-spacing:2px; text-shadow:0 1px 2px #000; color:#9fe8d8; }
+  #stanceBox.atk { color:#ffce7a; }
+  #stanceBox small { color:#6d7890; font-size:12px; letter-spacing:1px; }
+
+  /* ---------- 情境提示 ---------- */
+  #tipBox { position:absolute; left:50%; bottom:44px; transform:translateX(-50%);
+    max-width:640px; padding:8px 20px; font-size:15px; color:#ffe9b0; letter-spacing:2px;
+    background:rgba(10,14,24,.85); border:1px solid #6b5a2e; border-radius:6px;
+    opacity:0; transition:opacity .35s; pointer-events:none; text-align:center;
+    white-space:nowrap; text-shadow:0 1px 2px #000; }
+  #tipBox.show { opacity:1; }
+  #tipBox .k { color:#8fe8ff; }
+
+  /* ---------- 帮助页 ---------- */
+  #helpOv h2 { font-size:40px; color:#f2e3b8; letter-spacing:12px; font-weight:normal;
+    text-shadow:0 0 18px rgba(255,220,150,.45); }
+  #helpOv .cols { display:flex; gap:34px; margin-top:20px; text-align:left; }
+  #helpOv .col { width:330px; }
+  #helpOv h3 { font-size:18px; color:#ffe9b0; letter-spacing:4px; margin-bottom:8px; font-weight:normal; }
+  #helpOv p { font-size:14.5px; color:#aab4c4; line-height:1.85; letter-spacing:1px; }
+  #helpOv p b { color:#d9dfeb; font-weight:normal; }
+  #helpOv .stance { color:#9fe8d8; } #helpOv .stance.atk { color:#ffce7a; }
+
+  /* ---------- 横幅 ---------- */
+  #banner { position:absolute; top:110px; left:50%; transform:translateX(-50%);
+    font-size:40px; color:#ff6a4d; letter-spacing:8px; white-space:nowrap;
+    text-shadow:0 0 18px rgba(255,80,40,.8),0 2px 4px #000;
+    opacity:0; transition:opacity .4s; pointer-events:none; }
+  #banner.show { opacity:1; }
+
+  /* ---------- 通用遮罩 ---------- */
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    background:rgba(4,6,12,.72); z-index:10; }
+  .hidden { display:none; }
+  .btn { pointer-events:auto; cursor:pointer; margin-top:26px; padding:12px 52px;
+    font-size:24px; font-family:inherit; letter-spacing:8px; color:#f0e6c8;
+    background:linear-gradient(180deg,#1c2436,#131a28); border:1px solid #6b5a2e;
+    border-radius:6px; transition:all .15s; }
+  .btn:hover { border-color:#e8c66a; color:#ffe9b0; box-shadow:0 0 18px rgba(232,198,106,.35);
+    transform:translateY(-2px); }
+  .btn.small { font-size:17px; padding:8px 30px; margin-top:14px; letter-spacing:5px; }
+
+  /* ---------- 开始界面 ---------- */
+  #startOv h1 { font-size:54px; color:#f2e3b8; letter-spacing:14px;
+    text-shadow:0 0 24px rgba(255,220,150,.5),0 4px 8px #000; font-weight:normal; }
+  #startOv .sub { margin-top:10px; font-size:17px; color:#b9c4d6; letter-spacing:3px; }
+  #startOv .rule { width:420px; height:1px; margin:14px 0 0;
+    background:linear-gradient(90deg,transparent,#7a5c2e,transparent); }
+  .pickLabel { margin-top:14px; font-size:14px; color:#7f8ea6; letter-spacing:6px; }
+  .segRow { display:flex; gap:14px; margin-top:10px; }
+  .seg { pointer-events:auto; cursor:pointer; width:216px; padding:12px 12px;
+    background:linear-gradient(180deg,#131826,#0c0f18); border:1px solid #3a4452;
+    border-radius:8px; transition:all .15s; }
+  .seg:hover { border-color:#8794aa; }
+  .seg.on { border-color:#e8c66a; box-shadow:0 0 14px rgba(232,198,106,.22); }
+  .seg b { display:block; font-size:19px; color:#d9dfeb; letter-spacing:2px; font-weight:normal; }
+  .seg.on b { color:#ffe9b0; }
+  .seg span { display:block; margin-top:5px; font-size:12.5px; color:#8d99ad; line-height:1.5; }
+  #startOv .ctrl { margin-top:14px; font-size:14px; line-height:1.7; color:#8d99ad; letter-spacing:2px; }
+  #recLine { margin-top:10px; font-size:13px; color:#6d7890; letter-spacing:1px; }
+
+  /* ---------- 升级选卡 ---------- */
+  #cards h2 { font-size:40px; color:#ffe9b0; letter-spacing:10px; font-weight:normal;
+    text-shadow:0 0 16px rgba(255,220,150,.5); }
+  #cardRow { display:flex; gap:26px; margin-top:36px; }
+  .card { pointer-events:auto; cursor:pointer; width:230px; padding:26px 18px 22px;
+    background:linear-gradient(180deg,#151a26,#0c0f18);
+    border:1px solid #4a3d22; border-radius:10px; transition:all .15s; }
+  .card:hover { transform:translateY(-6px); border-color:#e8c66a;
+    box-shadow:0 8px 26px rgba(0,0,0,.6),0 0 20px rgba(232,198,106,.28); }
+  .card.bonus { border-color:#6a4a8c; }
+  .card.bonus:hover { border-color:#b98ae8; box-shadow:0 8px 26px rgba(0,0,0,.6),0 0 20px rgba(185,138,232,.35); }
+  .card .k { font-size:13px; color:#5c6c85; font-family:Arial,sans-serif; }
+  .card h3 { margin:8px 0 6px; font-size:28px; color:#ecd9a0; letter-spacing:5px; font-weight:normal; }
+  .card.bonus h3 { color:#d9b8ff; }
+  .card .lv { font-size:14px; color:#8fa3b8; letter-spacing:2px; margin-bottom:14px; }
+  .card p { font-size:16px; color:#aab4c4; line-height:1.6; letter-spacing:1px; min-height:52px; }
+  #cards .tip { margin-top:30px; font-size:15px; color:#7a879b; letter-spacing:3px; }
+
+  /* ---------- 暂停 / 结算 ---------- */
+  #pauseOv h2 { font-size:46px; color:#d8dfd0; letter-spacing:14px; font-weight:normal; }
+  #pauseOv p { margin-top:16px; font-size:17px; color:#8d99ad; letter-spacing:3px; }
+  #endOv h1 { font-size:52px; letter-spacing:12px; font-weight:normal; }
+  #endOv.win h1 { color:#ffe9b0; text-shadow:0 0 26px rgba(255,220,150,.7); }
+  #endOv.lose h1 { color:#e05a4a; text-shadow:0 0 22px rgba(255,60,40,.6); }
+  #endStats { margin-top:18px; font-size:20px; color:#c4cddd; letter-spacing:3px; line-height:1.8; }
+  #endStats .em { color:#ffe9b0; }
+  #endDao { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:720px; }
+  #endDao span { font-size:15px; color:#9fae9d; border:1px solid #3a4452; border-radius:20px;
+    padding:4px 14px; letter-spacing:2px; }
+  #endRec { margin-top:12px; font-size:14px; color:#6d7890; letter-spacing:1px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="1280" height="720"></canvas>
+
+  <div id="hud">
+    <div id="modeTag"></div>
+    <div id="time">00:00</div>
+    <div id="kills">斩妖 0</div>
+    <div id="phaseTag" class="hidden"></div>
+    <div id="stanceBox" class="hidden">剑阵 · 环守</div>
+    <div id="willBox" class="hidden"></div>
+    <div id="hpBox">
+      <div id="hpLabel">气 血</div>
+      <div id="hpBar"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
+    </div>
+    <div id="lvText">练气一层</div>
+    <div id="muteTag">音效 开（M）</div>
+    <div id="xpBar"><div id="xpFill"></div></div>
+  </div>
+
+  <div id="banner"></div>
+  <div id="tipBox"></div>
+
+  <div id="helpOv" class="overlay hidden">
+    <h2>御 剑 之 要</h2>
+    <div class="cols">
+      <div class="col">
+        <h3>操 作</h3>
+        <p>
+          <b>WASD / 方向键</b> 移动<br>
+          <b>Q</b> 切换剑阵 ｜ <b>空格</b> 影遁（剑魔式）<br>
+          <b>1 / 2 / 3 或点击</b> 择法 ｜ <b>P / Esc</b> 调息<br>
+          <b>M</b> 音效 ｜ <b>H</b> 本页 ｜ 失焦自动收势
+        </p>
+        <h3>资 源</h3>
+        <p>拾取<b>灵气</b>纳满经验即顿悟道法；<b>丹药</b>回复气血；站入<b>灵泉</b>持续回血，但妖物亦被泉眼吸引。</p>
+      </div>
+      <div class="col">
+        <h3>两 仪 剑 阵</h3>
+        <p>
+          <span class="stance">环守阵</span>：飞剑环身绞杀近敌，剑气自心迸发，稳守之形。<br>
+          <span class="stance atk">突攻阵</span>：飞剑合为一柄剑矛，直指移向，沿线突刺；
+          剑气自矛尖迸发且更密，身法 +12%；但<b>阵门大开，接触受伤 +20%</b>。<br>
+          切换需半息（0.5 秒）。环剑愈多矛愈宽，轨道愈广矛愈长。
+        </p>
+        <h3>目 标</h3>
+        <p>撑到时限即破晓渡劫；妖王现世于夜半，蓄力冲刺有红色预警线；<b>妖将</b>或怀词缀——迅捷、铁壁、裂地，各需别策。殒阵亦无妨，结算可见败因。</p>
+      </div>
+    </div>
+    <button id="helpCloseBtn" class="btn small">回 阵</button>
+  </div>
+
+  <div id="cards" class="overlay hidden">
+    <h2>顿 悟</h2>
+    <div id="cardRow"></div>
+    <div class="tip">点击择一 · 或按 1 / 2 / 3</div>
+  </div>
+
+  <div id="pauseOv" class="overlay hidden"><h2>调 息</h2><p>按 P 或 Esc 继续御剑</p><p style="margin-top:6px;font-size:14px;color:#6d7890;">H 查看操作与剑阵说明</p></div>
+
+  <div id="startOv" class="overlay">
+    <h1>御 剑 · 破 晓</h1>
+    <p class="sub">百妖夜行，御剑守阵。杀妖纳灵，悟道破境，撑到天明。</p>
+    <div class="rule"></div>
+    <div class="pickLabel">剑 局</div>
+    <div class="segRow" id="modeRow"></div>
+    <div class="pickLabel">剑 道</div>
+    <div class="segRow" id="buildRow"></div>
+    <div class="ctrl">
+      WASD / 方向键 移动 · 飞剑自动迎敌 · <b>Q 切换剑阵（环守 / 突攻）</b> · 空格 影遁（剑魔式）<br>
+      拾取灵气即可顿悟道法 · 撑到时限即破晓飞升 · P 暂停 · M 音效 · H 说明
+    </div>
+    <div id="recLine"></div>
+    <button id="startBtn" class="btn">入 阵</button>
+    <button id="helpBtn" class="btn small">操 作 与 剑 阵 说 明</button>
+  </div>
+
+  <div id="endOv" class="overlay hidden">
+    <h1 id="endTitle"></h1>
+    <div id="endStats"></div>
+    <div id="endDao"></div>
+    <div id="endRec"></div>
+    <div>
+      <button id="againBtn" class="btn">再 战</button>
+      <button id="homeBtn" class="btn small">回 首 页</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+   《御剑·破晓》 —— 幸存者类水墨修仙动作生存（第二轮版本）
+   单文件实现：预渲染精灵 + 固定时间步循环 + DOM UI
+   第二轮新增：双模式（破晓600s / 标准300s）、三种剑道构筑、
+   双阶段妖王、三类事件（伏击/灵泉/天雷）、分模式成绩记录。
+   本文件为正式发布入口：不含任何时间快进/强制经验等开发捷径。
+   文末 window.__RG 为受控自动化测试接口：仅提供与键鼠等价的
+   程序化驱动（配置/步进/选卡），不提供时间跳跃或经验直给。
+   ================================================================ */
+
+const W = 1280, H = 720;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const stage = document.getElementById('stage');
+const $ = id => document.getElementById(id);
+
+/* ---------------- 自适应缩放 ---------------- */
+function fit(){
+  const s = Math.min(innerWidth / W, innerHeight / H);
+  stage.style.setProperty('--s', s);
+}
+addEventListener('resize', fit); fit();
+
+/* ================================================================
+   一、音频引擎（WebAudio 合成，零素材）
+   ================================================================ */
+let AC = null, muted = false, lastHitS = 0, lastKillS = 0, lastGemS = 0;
+function audioInit(){
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+function beep(f, d, type, v, slide, delay){
+  if (!AC || muted || AC.state !== 'running') return;
+  type = type || 'square'; v = v == null ? 0.12 : v; delay = delay || 0;
+  const t = AC.currentTime + delay;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(v, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(AC.destination);
+  o.start(t); o.stop(t + d + 0.02);
+}
+const SFX = {
+  hit(){ beep(880, .05, 'square', .04, -320); },
+  kill(){ beep(500, .09, 'triangle', .07, -220); },
+  hurt(){ beep(150, .22, 'sawtooth', .17, -70); },
+  gem(){ beep(720, .07, 'sine', .06, 260); },
+  potion(){ beep(520, .14, 'sine', .1, 200); },
+  levelup(){ [523,659,784,1047].forEach((f,i)=>beep(f,.15,'triangle',.09,0,i*.07)); },
+  pick(){ beep(660, .1, 'triangle', .09, 140); },
+  whoosh(){ beep(300, .12, 'sine', .05, 500); },
+  warn(){ beep(98, .5, 'sawtooth', .13, -25); beep(98, .55, 'sawtooth', .13, -25, .65); },
+  thunder(){ beep(60, .4, 'sawtooth', .18, -30); beep(120, .25, 'square', .08, -80, .05); },
+  spring(){ beep(440, .3, 'sine', .08, 180); },
+  dash(){ beep(200, .16, 'sine', .12, 600); },
+  shot(){ beep(240, .12, 'square', .06, -120); },
+  switchStance(){ beep(340, .1, 'triangle', .09, 300); beep(480, .12, 'triangle', .07, 260, .06); },
+  phase(){ beep(196, .3, 'sine', .09, 98); beep(392, .25, 'sine', .06, 120, .12); },
+  bell(){ beep(880, .8, 'sine', .12, -12); beep(1318, .7, 'sine', .07, -8, .05); },
+  tip(){ beep(1046, .12, 'sine', .05, 120); },
+  stomp(){ beep(90, .3, 'sawtooth', .12, -40); },
+  stompHit(){ beep(70, .35, 'sawtooth', .16, -30); beep(140, .2, 'square', .07, -60, .04); },
+  victory(){ [523,659,784,1047,1319].forEach((f,i)=>beep(f,.28,'triangle',.1,0,i*.13)); },
+  defeat(){ [392,330,262,196].forEach((f,i)=>beep(f,.32,'sawtooth',.09,0,i*.19)); }
+};
+function sfxHit(){ const n = performance.now(); if (n - lastHitS > 60){ lastHitS = n; SFX.hit(); } }
+function sfxKill(){ const n = performance.now(); if (n - lastKillS > 90){ lastKillS = n; SFX.kill(); } }
+function sfxGem(){ const n = performance.now(); if (n - lastGemS > 70){ lastGemS = n; SFX.gem(); } }
+
+/* ================================================================
+   二、精灵预渲染（离屏画布）
+   ================================================================ */
+function mkCanvas(w,h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function radial(g, x, y, r, stops){
+  const gr = g.createRadialGradient(x, y, 0, x, y, r);
+  stops.forEach(s => gr.addColorStop(s[0], s[1]));
+  return gr;
+}
+function glowLayer(g, cx, cy, r, color){
+  g.fillStyle = radial(g, cx, cy, r, [[0,color],[1,'rgba(0,0,0,0)']]);
+  g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+}
+
+function spritePlayer(){
+  const c = mkCanvas(112,112), g = c.getContext('2d'), cx = 56, cy = 56;
+  glowLayer(g, cx, cy, 52, 'rgba(255,222,150,.34)');
+  g.fillStyle = '#d9c48c';
+  g.beginPath();
+  g.moveTo(cx, cy-16);
+  g.bezierCurveTo(cx+16, cy-8, cx+15, cy+24, cx+11, cy+27);
+  g.lineTo(cx-11, cy+27);
+  g.bezierCurveTo(cx-15, cy+24, cx-16, cy-8, cx, cy-16);
+  g.fill();
+  g.strokeStyle = '#8c2f24'; g.lineWidth = 2.4;
+  g.beginPath(); g.moveTo(cx-11, cy+27); g.lineTo(cx+11, cy+27); g.stroke();
+  g.strokeStyle = 'rgba(140,47,36,.9)'; g.lineWidth = 2.6;
+  g.beginPath(); g.moveTo(cx-8, cy+6); g.lineTo(cx+8, cy+6); g.stroke();
+  g.fillStyle = '#f7ead0';
+  g.beginPath(); g.arc(cx, cy-22, 8, 0, 7); g.fill();
+  g.fillStyle = '#2b2b33';
+  g.beginPath(); g.arc(cx, cy-30, 3.4, 0, 7); g.fill();
+  g.fillRect(cx-1, cy-32, 2, 5);
+  return c;
+}
+function spriteImp(){
+  const c = mkCanvas(64,64), g = c.getContext('2d'), cx=32, cy=34;
+  glowLayer(g, cx, cy, 28, 'rgba(255,66,44,.32)');
+  g.fillStyle = '#b32a1e';
+  g.beginPath(); g.arc(cx, cy, 11, 0, 7); g.fill();
+  g.strokeStyle = '#e8b17a'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(cx-5, cy-8); g.lineTo(cx-8, cy-16); g.stroke();
+  g.beginPath(); g.moveTo(cx+5, cy-8); g.lineTo(cx+8, cy-16); g.stroke();
+  g.fillStyle = '#ffd97a';
+  g.beginPath(); g.arc(cx-4, cy-2, 1.8, 0, 7); g.arc(cx+4, cy-2, 1.8, 0, 7); g.fill();
+  return c;
+}
+function spriteWolf(){
+  const c = mkCanvas(80,64), g = c.getContext('2d'), cx=40, cy=36;
+  glowLayer(g, cx, cy, 32, 'rgba(230,60,40,.3)');
+  g.fillStyle = '#8c1f1f';
+  g.beginPath(); g.ellipse(cx, cy, 16, 11, 0, 0, 7); g.fill();
+  g.beginPath(); g.arc(cx-12, cy-2, 8, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(cx-16, cy-8); g.lineTo(cx-14, cy-17); g.lineTo(cx-9, cy-9); g.fill();
+  g.beginPath(); g.moveTo(cx-9, cy-8); g.lineTo(cx-6, cy-15); g.lineTo(cx-2, cy-8); g.fill();
+  g.strokeStyle = '#8c1f1f'; g.lineWidth = 5; g.lineCap='round';
+  g.beginPath(); g.moveTo(cx+15, cy-2); g.quadraticCurveTo(cx+24, cy-8, cx+26, cy-14); g.stroke();
+  g.fillStyle = '#ffe08a';
+  g.beginPath(); g.arc(cx-15, cy-4, 1.8, 0, 7); g.fill();
+  return c;
+}
+function spriteBrute(){
+  const c = mkCanvas(128,128), g = c.getContext('2d'), cx=64, cy=70;
+  glowLayer(g, cx, cy, 58, 'rgba(255,50,30,.32)');
+  g.fillStyle = '#8c1414';
+  g.beginPath(); g.arc(cx, cy, 24, 0, 7); g.fill();
+  g.fillStyle = '#a83222';
+  g.beginPath(); g.ellipse(cx, cy+8, 13, 14, 0, 0, 7); g.fill();
+  g.strokeStyle = '#e6d5b0'; g.lineWidth = 6; g.lineCap='round';
+  g.beginPath(); g.moveTo(cx-14, cy-16); g.quadraticCurveTo(cx-26, cy-30, cx-20, cy-42); g.stroke();
+  g.beginPath(); g.moveTo(cx+14, cy-16); g.quadraticCurveTo(cx+26, cy-30, cx+20, cy-42); g.stroke();
+  g.fillStyle = '#ffdd44';
+  g.beginPath(); g.arc(cx-8, cy-6, 2.6, 0, 7); g.arc(cx+8, cy-6, 2.6, 0, 7); g.fill();
+  g.strokeStyle = '#f0e6cc'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(cx-6, cy+12); g.lineTo(cx-8, cy+20); g.stroke();
+  g.beginPath(); g.moveTo(cx+6, cy+12); g.lineTo(cx+8, cy+20); g.stroke();
+  return c;
+}
+function spriteWraith(){
+  const c = mkCanvas(56,56), g = c.getContext('2d'), cx=28, cy=28;
+  glowLayer(g, cx, cy, 24, 'rgba(178,150,255,.4)');
+  g.fillStyle = '#a89bff';
+  g.beginPath();
+  g.moveTo(cx, cy-13); g.lineTo(cx+9, cy); g.lineTo(cx, cy+15); g.lineTo(cx-9, cy); g.closePath();
+  g.fill();
+  g.fillStyle = 'rgba(168,155,255,.45)';
+  g.beginPath(); g.moveTo(cx-6, cy+8); g.lineTo(cx+6, cy+8); g.lineTo(cx, cy+21); g.closePath(); g.fill();
+  g.fillStyle = '#1a1030';
+  g.beginPath(); g.arc(cx-3, cy-3, 1.6, 0, 7); g.arc(cx+3, cy-3, 1.6, 0, 7); g.fill();
+  return c;
+}
+function spriteBoss(){
+  const c = mkCanvas(200,200), g = c.getContext('2d'), cx=100, cy=110;
+  glowLayer(g, cx, cy, 92, 'rgba(255,28,16,.42)');
+  g.fillStyle = '#6d0f0f';
+  g.beginPath(); g.arc(cx, cy, 42, 0, 7); g.fill();
+  g.fillStyle = '#8c1f14';
+  g.beginPath(); g.ellipse(cx, cy+12, 24, 26, 0, 0, 7); g.fill();
+  g.strokeStyle = '#e6d5b0'; g.lineWidth = 11; g.lineCap='round';
+  g.beginPath(); g.moveTo(cx-24, cy-26); g.quadraticCurveTo(cx-52, cy-52, cx-38, cy-80); g.stroke();
+  g.beginPath(); g.moveTo(cx+24, cy-26); g.quadraticCurveTo(cx+52, cy-52, cx+38, cy-80); g.stroke();
+  g.shadowColor = '#ffb020'; g.shadowBlur = 14;
+  g.fillStyle = '#ffdd44';
+  g.beginPath(); g.arc(cx-14, cy-10, 4.6, 0, 7); g.arc(cx+14, cy-10, 4.6, 0, 7); g.fill();
+  g.shadowBlur = 0;
+  g.strokeStyle = '#2b0808'; g.lineWidth = 4;
+  g.beginPath(); g.arc(cx, cy+8, 16, .25, Math.PI-.25); g.stroke();
+  return c;
+}
+function spriteGem(){
+  const c = mkCanvas(36,36), g = c.getContext('2d'), cx=18, cy=18;
+  glowLayer(g, cx, cy, 16, 'rgba(99,230,210,.45)');
+  g.fillStyle = '#63e6d2';
+  g.save(); g.translate(cx,cy); g.rotate(Math.PI/4);
+  g.fillRect(-5,-5,10,10); g.restore();
+  g.fillStyle = '#d8fff6';
+  g.save(); g.translate(cx,cy); g.rotate(Math.PI/4);
+  g.fillRect(-2.4,-2.4,4.8,4.8); g.restore();
+  return c;
+}
+function spritePotion(){
+  const c = mkCanvas(40,40), g = c.getContext('2d'), cx=20, cy=22;
+  glowLayer(g, cx, cy, 17, 'rgba(255,80,70,.42)');
+  g.fillStyle = '#e04030';
+  g.beginPath(); g.arc(cx, cy, 9, 0, 7); g.fill();
+  g.fillStyle = '#ffb3a8';
+  g.beginPath(); g.arc(cx-3, cy-3, 3, 0, 7); g.fill();
+  g.fillStyle = '#caa46a';
+  g.fillRect(cx-2.4, cy-13, 4.8, 5);
+  return c;
+}
+function spriteBlade(){
+  const c = mkCanvas(88,32), g = c.getContext('2d');
+  g.fillStyle = radial(g, 40, 16, 30, [[0,'rgba(99,230,220,.35)'],[1,'rgba(0,0,0,0)']]);
+  g.fillRect(0,0,88,32);
+  g.fillStyle = '#b8fff2';
+  g.beginPath();
+  g.moveTo(80,16); g.lineTo(52,10.5); g.lineTo(28,10.5); g.lineTo(28,21.5); g.lineTo(52,21.5);
+  g.closePath(); g.fill();
+  g.fillStyle = '#4ed8c4';
+  g.fillRect(28, 12.6, 46, 6.8);
+  g.fillStyle = '#e8c66a';
+  g.fillRect(26, 6, 4, 20);
+  g.fillStyle = '#5a3a1a';
+  g.fillRect(12, 13.4, 14, 5.2);
+  g.beginPath(); g.arc(11, 16, 3.4, 0, 7); g.fill();
+  return c;
+}
+function spriteShot(){
+  const c = mkCanvas(28,28), g = c.getContext('2d'), cx=14, cy=14;
+  glowLayer(g, cx, cy, 13, 'rgba(255,60,30,.6)');
+  g.fillStyle = '#ff8a5a';
+  g.beginPath(); g.arc(cx, cy, 5, 0, 7); g.fill();
+  g.fillStyle = '#ffd0a0';
+  g.beginPath(); g.arc(cx, cy, 2.2, 0, 7); g.fill();
+  return c;
+}
+function spriteVignette(color){
+  const c = mkCanvas(W,H), g = c.getContext('2d');
+  g.fillStyle = radial(g, W/2, H/2, Math.max(W,H)*.62,
+    [[0,'rgba(0,0,0,0)'],[.62,'rgba(0,0,0,0)'],[1,color]]);
+  g.fillRect(0,0,W,H);
+  return c;
+}
+function spriteBG(){
+  const c = mkCanvas(W,H), g = c.getContext('2d');
+  const sky = g.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0f22'); sky.addColorStop(.5,'#0c1226'); sky.addColorStop(1,'#0a0e1c');
+  g.fillStyle = sky; g.fillRect(0,0,W,H);
+  for (let i=0;i<150;i++){
+    const x = Math.random()*W, y = Math.random()*H;
+    if (x>72 && x<W-72 && y>72 && y<H-72) continue;
+    g.fillStyle = `rgba(220,230,255,${.15+Math.random()*.55})`;
+    const s = Math.random()<.12 ? 2 : 1;
+    g.fillRect(x, y, s, s);
+  }
+  g.fillStyle = '#070a14';
+  g.beginPath(); g.moveTo(0,H-70);
+  for (let x=0; x<=W; x+=64){
+    const h = 26 + Math.sin(x*.013)*14 + Math.sin(x*.031)*10;
+    g.lineTo(x, H-70-Math.abs(h));
+  }
+  g.lineTo(W,H); g.lineTo(0,H); g.closePath(); g.fill();
+  const A = 70, RR = 18;
+  g.strokeStyle = 'rgba(120,180,255,.22)'; g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(A+RR, A); g.arcTo(W-A, A, W-A, H-A, RR); g.arcTo(W-A, H-A, A, H-A, RR);
+  g.arcTo(A, H-A, A, A, RR); g.arcTo(A, A, W-A, A, RR); g.closePath(); g.stroke();
+  g.strokeStyle = 'rgba(120,180,255,.12)'; g.lineWidth = 6;
+  g.stroke();
+  const corners = [[A+2,A+2],[W-A-2,A+2],[A+2,H-A-2],[W-A-2,H-A-2]];
+  corners.forEach(p=>{
+    g.fillStyle = 'rgba(150,200,255,.5)';
+    g.beginPath(); g.arc(p[0], p[1], 4, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(150,200,255,.25)'; g.lineWidth = 1;
+    g.beginPath(); g.arc(p[0], p[1], 8, 0, 7); g.stroke();
+  });
+  g.fillStyle = radial(g, W/2, H/2, 150, [[0,'rgba(255,240,200,.07)'],[1,'rgba(0,0,0,0)']]);
+  g.beginPath(); g.arc(W/2, H/2, 150, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(120,180,255,.045)'; g.lineWidth = 1;
+  for (let x=A; x<=W-A; x+=80){ g.beginPath(); g.moveTo(x,A); g.lineTo(x,H-A); g.stroke(); }
+  for (let y=A; y<=H-A; y+=80){ g.beginPath(); g.moveTo(A,y); g.lineTo(W-A,y); g.stroke(); }
+  return c;
+}
+const SPR = {
+  player: spritePlayer(), imp: spriteImp(), wolf: spriteWolf(), brute: spriteBrute(),
+  wraith: spriteWraith(), boss: spriteBoss(), gem: spriteGem(), potion: spritePotion(),
+  blade: spriteBlade(), shot: spriteShot(), bg: spriteBG(),
+  vigDark: spriteVignette('rgba(0,0,0,.5)'),
+  vigHurt: spriteVignette('rgba(200,20,10,.5)')
+};
+
+/* ================================================================
+   三、模式、构筑与数值配置
+   ================================================================ */
+const MODES = {
+  dawn:     { id:'dawn',     name:'破晓局', label:'破晓 · 十分钟', dur:600, bossAt:480, warnAt:474, bossHp:1500, endless:false,
+              brief:'撑满十分钟，天明渡劫' },
+  standard: { id:'standard', name:'标准局', label:'标准 · 五分钟', dur:300, bossAt:235, warnAt:229, bossHp:1000, endless:false,
+              brief:'撑满五分钟，快速渡劫' },
+  endless:  { id:'endless',  name:'演武局', label:'演武 · 无尽夜', dur:Infinity, bossAt:150, warnAt:144, bossHp:850, endless:true,
+              brief:'长夜无尽，妖王复现，死而后已' }
+};
+/* 更次（阶段）：横幅 + 标签 + 换怪分界，每阶段决策压力不同 */
+const PHASES = {
+  dawn: [
+    { t:0,   name:'子时 · 入夜', tag:'小妖试阵' },
+    { t:60,  name:'丑时 · 妖行', tag:'妖狼入猎' },
+    { t:150, name:'寅时 · 妖潮', tag:'妖魂夜游' },
+    { t:270, name:'卯时 · 群妖', tag:'妖将当道' },
+    { t:390, name:'辰时 · 深夜', tag:'百妖夜行' },
+    { t:480, name:'妖王临阵',   tag:'背水一战' },
+    { t:570, name:'破晓将至',   tag:'再撑片刻' }
+  ],
+  standard: [
+    { t:0,   name:'子时 · 入夜', tag:'小妖试阵' },
+    { t:45,  name:'丑时 · 妖行', tag:'妖狼入猎' },
+    { t:140, name:'寅时 · 妖潮', tag:'妖魂妖将' },
+    { t:235, name:'妖王临阵',   tag:'背水一战' },
+    { t:270, name:'破晓将至',   tag:'再撑片刻' }
+  ],
+  endless: null  /* 演武局按妖潮波次推进（见 updatePhases） */
+};
+/* 精英词缀：妖将专属，迫使不同应对 */
+const AFFIXES = {
+  swift:   { name:'迅捷', tint:'#ffd66a', mark:'疾' },   /* 快而脆：需拉开或矛惩 */
+  bulwark: { name:'铁壁', tint:'#b8c4d6', mark:'壁' },   /* 剑气减伤四分之一：逼近战破甲 */
+  quake:   { name:'裂地', tint:'#ff9a5a', mark:'裂' }    /* 跺地冲击波：逼走位 */
+};
+/* 两仪剑阵参数 */
+const STANCE = {
+  cd: 0.5,            /* 切换冷却（秒） */
+  assault: {
+    speedMul: 1.12,         /* 阵步轻进 */
+    contactAmp: 1.2,        /* 阵门大开：接触受伤 +20% */
+    waveRate: 2.2,          /* 剑气间隔 ÷2.2（自矛尖迸发） */
+    tick: 0.16,             /* 矛沿线突刺结算间隔 */
+    hitCd: 0.34,            /* 单敌受矛伤冷却 */
+    dmgMul: 1.2,            /* 矛伤倍率 */
+    width: 22,              /* 基础矛宽（+ 环剑数×6） */
+    lenBase: 130,           /* 基础矛长（+ 轨道半径×1.05） */
+    turn: 9                 /* 转向速度 rad/s */
+  }
+};
+const BUILDS = {
+  guard: {
+    id:'guard', name:'剑卫 · 环剑式', brief:'四剑环身 · 近身绞杀',
+    desc:'环剑更多更狠，击杀可引发剑气回涌；剑气迟缓',
+    init: { orbitCount:4, orbitDmg:19, orbitSpeed:2.1, waveInterval:4.5, waveDmg:12, speed:210, surge:0.15 }
+  },
+  sage: {
+    id:'sage', name:'剑仙 · 御气式', brief:'万剑归宗 · 远程控线',
+    desc:'剑气连绵且使妖物迟缓；环剑单薄，移速更快',
+    init: { orbitCount:1, orbitDmg:9, orbitSpeed:2.4, waveInterval:1.0, waveDmg:30, speed:240, frost:0.2 }
+  },
+  shade: {
+    id:'shade', name:'剑魔 · 遁影式', brief:'影遁剑随 · 爆发机动',
+    desc:'杀敌积攒剑意，空格影遁瞬移并短暂爆发剑势',
+    init: { orbitCount:2, orbitDmg:13, orbitSpeed:2.4, waveInterval:2.6, waveDmg:16, speed:225, swordWill:1 }
+  }
+};
+/* 通用道法（所有构筑共享） */
+const UPGRADES = [
+  { id:'orb',  name:'御剑术',   desc:'再召一柄飞剑环绕护身',            max:5, apply(){ player.orbitCount++; } },
+  { id:'dmg',  name:'剑气淬炼', desc:'剑刃与剑气伤害提升两成',          max:6, apply(){ player.dmgMul *= 1.15; } },
+  { id:'spd',  name:'疾风步',   desc:'身法更加轻灵，移速提升',          max:5, apply(){ player.speed *= 1.08; } },
+  { id:'hp',   name:'玄罡护体', desc:'气血上限加二十五，并立即恢复二十五点气血（不超过新上限）', max:5,
+    apply(){ player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); } },
+  { id:'pick', name:'缩地成寸', desc:'纳灵范围扩大三成',                max:4, apply(){ player.pickupR *= 1.3; } },
+  { id:'rate', name:'剑气纵横', desc:'剑气迸发更为频繁',                max:4, apply(){ player.waveInterval /= 1.2; } },
+  { id:'regen',name:'回春诀',   desc:'每四秒回复一点气血',              max:3, apply(){ player.regen += 1; } },
+  { id:'reso', name:'剑意共鸣', desc:'飞剑转速加两成半，剑伤略增',      max:3, apply(){ player.orbitSpeed *= 1.25; player.orbitDmg *= 1.10; } },
+  { id:'xp',   name:'灵潮',     desc:'灵气汲取加成两成',                max:3, apply(){ player.xpMul *= 1.2; } },
+  /* 两仪剑阵道法（第三轮新增） */
+  { id:'taiji', name:'两仪归一', desc:'切换剑阵时迸发剑气冲击波，伤敌于周身', max:1,
+    apply(){ player.switchNova = true; } },
+  { id:'focus', name:'凝锋',     desc:'突攻剑矛更阔更利，转向亦更灵',    max:2,
+    apply(){ player.lanceWB += 10; player.lanceTurnB += 3.5; } },
+  { id:'flow',  name:'阵法圆融', desc:'剑阵切换冷却减半，两仪流转如意',  max:1,
+    apply(){ player.stanceCdMul = 0.5; } }
+];
+/* 构筑专属道法（仅对应构筑出现） */
+const BUILD_UPGRADES = {
+  guard: [
+    { id:'surge',  name:'剑气回涌', bonus:true, max:1,
+      desc:'剑气回涌几率提升至三成，冲击波更具威力', apply(){ player.surge = 0.30; player.surgeMul = 1.5; } },
+    { id:'bshield',name:'剑盾护体', bonus:true, max:1,
+      desc:'环剑轨道扩大一成半，所受接触伤害减两成半', apply(){ player.orbitR *= 1.15; player.contactCut = 0.75; } },
+    { id:'breaklance', name:'破军锋', bonus:true, max:2,
+      desc:'突攻剑矛对妖将与妖王伤害提升三成', apply(){ player.lanceEliteMul += 0.3; } }
+  ],
+  sage: [
+    { id:'split', name:'剑气分光', bonus:true, max:1,
+      desc:'剑气一次迸发两道，齐射妖群', apply(){ player.waveSplit = true; } },
+    { id:'frost', name:'寒霜剑意', bonus:true, max:1,
+      desc:'剑气减速强化至三成五，持续一秒二', apply(){ player.frost = 0.35; } },
+    { id:'longbreath', name:'御气长存', bonus:true, max:2,
+      desc:'突攻阵下剑气迸发再快两成半', apply(){ player.assaultWaveMul *= 0.75; } }
+  ],
+  shade: [
+    { id:'swiftdash', name:'遁术精进', bonus:true, max:1,
+      desc:'影遁冷却缩短一秒，剑意积攒加快', apply(){ player.dashCd = 2.0; player.willPer = 4; } },
+    { id:'shadowblade', name:'剑随影动', bonus:true, max:1,
+      desc:'影遁后两秒内，剑刃剑气伤害提升四成', apply(){ player.dashEmp = 0.4; } },
+    { id:'strikewill', name:'阵中夺魂', bonus:true, max:2,
+      desc:'突攻阵下每两次击杀额外积攒一点剑意', apply(){ player.assaultWill++; } }
+  ]
+};
+/* 注意：guard/sage 的专属阵法道法追加于各自数组（破军锋 / 御气长存） */
+/* 事件调度表（按模式时长适配；演武局在 resetGame 中按 70 秒轮转生成） */
+const EVENT_SCHED = {
+  dawn:     [ {t:90,type:'ambush'}, {t:150,type:'spring'}, {t:210,type:'thunder'},
+              {t:280,type:'ambush'}, {t:360,type:'spring'}, {t:430,type:'thunder'},
+              {t:500,type:'ambush'}, {t:560,type:'thunder'} ],
+  standard: [ {t:45,type:'ambush'}, {t:90,type:'spring'}, {t:140,type:'thunder'},
+              {t:200,type:'ambush'}, {t:250,type:'spring'} ]
+};
+function endlessSched(){
+  const q = [], cyc = ['ambush','spring','thunder','ambush','thunder'];
+  let i = 0;
+  for (let t = 60; t < 3000; t += 70) q.push({ t, type: cyc[i++ % cyc.length] });
+  return q;
+}
+const EVENT_NAMES = { ambush:'伏击', spring:'灵泉', thunder:'天雷' };
+
+/* ---------------- 偏好、设置与成绩记录（本地，按模式分档，带版本与迁移） ---------------- */
+let pref = { mode:'dawn', build:'guard' };
+/* 存档格式 v2：{ v:2, <modeId>:{plays,wins,bestKills,bestLevel,bestTime}, … }
+   v1（无 v 字段）自动迁移：保留原分档，补全新模式档。损坏或不可用则整体重置为空档。 */
+const SAVE_VER = 2;
+function blankRec(){ return { plays:0, wins:0, bestKills:0, bestLevel:0, bestTime:0 }; }
+function loadRecords(){
+  let r = null;
+  try { r = JSON.parse(localStorage.getItem('yjpx_records')); } catch(e){ r = null; }
+  if (!r || typeof r !== 'object' || Array.isArray(r)) r = {};
+  Object.keys(MODES).forEach(m => { if (!r[m] || typeof r[m] !== 'object') r[m] = blankRec(); });
+  r.v = SAVE_VER;
+  return r;
+}
+function saveRecords(r){ try { localStorage.setItem('yjpx_records', JSON.stringify(r)); } catch(e){} }
+function savePref(){ try { localStorage.setItem('yjpx_pref', JSON.stringify(pref)); } catch(e){} }
+/* 设置档：音效开关 + 情境提示已读（不污染对局；损坏自动重置） */
+let settings = { muted:false, seenTips:{} };
+function loadSettings(){
+  try {
+    const s = JSON.parse(localStorage.getItem('yjpx_settings'));
+    if (s && typeof s === 'object'){
+      settings.muted = !!s.muted;
+      settings.seenTips = (s.seenTips && typeof s.seenTips === 'object' && !Array.isArray(s.seenTips)) ? s.seenTips : {};
+    }
+  } catch(e){}
+}
+function saveSettings(){ try { localStorage.setItem('yjpx_settings', JSON.stringify(settings)); } catch(e){} }
+try {
+  const p = JSON.parse(localStorage.getItem('yjpx_pref'));
+  if (p && MODES[p.mode] && BUILDS[p.build]) pref = p;
+} catch(e){}
+loadSettings();
+
+/* ================================================================
+   四、游戏状态
+   ================================================================ */
+let enemies=[], gems=[], potions=[], waves=[], particles=[], dmgTexts=[];
+let shocks=[], strikes=[], bossShots=[];
+let enemyId = 0;
+
+const game = {};
+function defaultGame(){
+  return {
+    state:'start', time:0, kills:0, pending:0, shake:0,
+    spawnT:1.2, boss:null, bossWarned:false, bossSpawned:false,
+    bannerT:0, flash:0, mode:null,
+    eventQueue:[], activeEvents:[], eventStats:{ambush:0,spring:0,thunder:0},
+    springActive:false, bossPhase2Count:0,
+    /* 第三轮：阶段 / 剑阵 / 提示 / 败因 / 演武 */
+    phaseIdx:0, phaseT:0, bossN:0, bossNextAt:null, bossSlain:0,
+    deathCause:null, deathPhase:'', tipT:0, tipDelay:1.5
+  };
+}
+function defaultPlayer(){
+  return {
+    build:'guard',
+    x:W/2, y:H/2, r:14,
+    hp:100, maxHp:100, speed:220, pickupR:90,
+    invuln:0, hurtFx:0, regenTimer:0, regen:0,
+    dmgMul:1, xpMul:1,
+    orbitCount:2, orbitAngle:0, orbitSpeed:2.4, orbitR:72, orbitDmg:12,
+    waveInterval:2.2, waveTimer:0.8, waveDmg:18,
+    level:1, xp:0, xpNeed:8,
+    // 构筑机制
+    surge:0, surgeMul:1, frost:0, contactCut:1, waveSplit:false,
+    swordWill:0, maxWill:3, willProg:0, willPer:6,
+    dashCd:3, dashT:0, dashEmp:0.15, dashEmpT:0,
+    // 两仪剑阵
+    stance:'guard', stanceCd:0, stanceCdMul:1,
+    lanceAng:0, lanceTick:0, lanceWB:0, lanceTurnB:0,
+    lanceEliteMul:1, assaultWill:0, assaultWaveMul:1, assaultKillC:0,
+    switchNova:false, lastDmgSrc:null
+  };
+}
+const player = defaultPlayer();
+
+/* 剑矛当前有效参数（环剑数→宽，轨道→长，凝锋加成） */
+function lanceLen(){ return STANCE.assault.lenBase + player.orbitR * 1.05; }
+function lanceWidth(){ return STANCE.assault.width + player.orbitCount * 6 + player.lanceWB; }
+function lanceTurn(){ return STANCE.assault.turn + player.lanceTurnB; }
+
+function buildPool(){
+  return UPGRADES.concat(BUILD_UPGRADES[pref.build]);
+}
+function resetGame(){
+  enemies=[]; gems=[]; potions=[]; waves=[]; particles=[]; dmgTexts=[];
+  shocks=[]; strikes=[]; bossShots=[]; enemyId=0;
+  Object.assign(game, defaultGame());
+  game.state = 'playing';
+  game.mode = MODES[pref.mode];
+  game.eventQueue = game.mode.endless ? endlessSched() : EVENT_SCHED[pref.mode].slice();
+  if (game.mode.endless) game.bossNextAt = game.mode.bossAt;
+  Object.assign(player, defaultPlayer(), { build:pref.build }, BUILDS[pref.build].init);
+  buildPool().forEach(u => u.lv = 0);
+  $('banner').classList.remove('show');
+  $('tipBox').classList.remove('show');
+  $('phaseTag').classList.remove('hidden');
+  $('phaseTag').innerHTML = currentPhase() ? currentPhase().name : '';
+  $('stanceBox').classList.remove('hidden');
+  updateStanceUI();
+}
+
+const TYPES = {
+  imp:    { r:10, hp:10,   spd:55,  dmg:8,  xp:1 },
+  wolf:   { r:12, hp:22,   spd:105, dmg:12, xp:2 },
+  brute:  { r:20, hp:140,  spd:45,  dmg:25, xp:8 },
+  wraith: { r:8,  hp:16,   spd:128, dmg:10, xp:2 },
+  boss:   { r:30, hp:1500, spd:60,  dmg:40, xp:100 }
+};
+
+const CN_NUM = ['零','一','二','三','四','五','六'];
+function realmName(lv){
+  if (lv >= 26) return '渡劫'; if (lv >= 19) return '化神';
+  if (lv >= 13) return '元婴'; if (lv >= 8)  return '金丹';
+  if (lv >= 4)  return '筑基'; return '练气';
+}
+function realmFull(lv){
+  const r = realmName(lv);
+  if (r === '渡劫') return '渡劫';
+  const n = Math.min(lv, (lv>=26?9: lv>=19?lv-18 : lv>=13?lv-12 : lv>=8?lv-7 : lv>=4?lv-3 : lv));
+  return r + CN_NUM[Math.min(n, 6)] + '层';
+}
+/* 影遁强化期的有效伤害倍率 */
+function effDmgMul(){
+  return player.dmgMul * (player.dashEmpT > 0 ? 1 + player.dashEmp : 1);
+}
+
+/* ---------------- 更次（阶段） ---------------- */
+function phaseList(){
+  if (!game.mode || game.mode.endless) return null;
+  return PHASES[game.mode.id];
+}
+function currentPhase(){
+  const L = phaseList();
+  if (!L) return null;
+  return L[Math.min(game.phaseIdx, L.length - 1)];
+}
+function updatePhases(){
+  const L = phaseList();
+  if (L){
+    while (game.phaseIdx + 1 < L.length && game.time >= L[game.phaseIdx + 1].t){
+      game.phaseIdx++;
+      const ph = L[game.phaseIdx];
+      showBanner(ph.name, 2.6);
+      SFX.phase();
+      $('phaseTag').innerHTML = ph.name + ' · <b>' + ph.tag + '</b>';
+    }
+    /* 破晓仪式：终局 30 秒天光渐起 + 钟声（横幅由更次切换播报） */
+    const ritualAt = game.mode.dur - 30;
+    if (game.time >= ritualAt && game.phaseT < ritualAt){
+      SFX.bell();
+    }
+  } else if (game.mode && game.mode.endless){
+    /* 演武局：每 90 秒一波妖潮，波次即阶段 */
+    const wave = Math.floor(game.time / 90) + 1;
+    if (game.phaseIdx !== wave){
+      game.phaseIdx = wave;
+      showBanner('妖 潮 · 第 ' + CN_NUM[Math.min(wave, 6)] + ' 阵', 2.4);
+      SFX.phase();
+      $('phaseTag').innerHTML = '妖潮 · 第 ' + wave + ' 阵 · <b>夜色愈深</b>';
+    }
+  }
+  game.phaseT = game.time;
+}
+
+/* ---------------- 两仪剑阵切换 ---------------- */
+function switchStance(){
+  if (game.state !== 'playing') return false;
+  if (player.stanceCd > 0) return false;
+  player.stance = player.stance === 'guard' ? 'assault' : 'guard';
+  player.stanceCd = STANCE.cd * player.stanceCdMul;
+  /* 两仪归一：切换迸发冲击波 */
+  if (player.switchNova){
+    shocks.push({ x: player.x, y: player.y, r: 12, maxR: 150,
+      life: 0.32, dmg: player.orbitDmg * 3 * effDmgMul(), hit: new Set() });
+  }
+  /* 切换脉冲 */
+  for (let i = 0; i < 10; i++){
+    const a = Math.random() * Math.PI * 2;
+    particles.push({ x: player.x + Math.cos(a) * 20, y: player.y + Math.sin(a) * 20,
+      vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, life: .3, max: .3, r: 2,
+      color: player.stance === 'assault' ? '#ffce7a' : '#9fe8d8' });
+  }
+  game.shake = Math.max(game.shake, 3);
+  SFX.switchStance();
+  updateStanceUI();
+  return true;
+}
+function updateStanceUI(){
+  const el = $('stanceBox');
+  if (player.stance === 'assault'){
+    el.classList.add('atk');
+    el.innerHTML = '剑阵 · <span style="color:#ffce7a">突攻</span><small>（Q 环守）</small>';
+  } else {
+    el.classList.remove('atk');
+    el.innerHTML = '剑阵 · <span style="color:#9fe8d8">环守</span><small>（Q 突攻）</small>';
+  }
+}
+/* 玩家当前有效移速（突攻阵步轻进） */
+function effSpeed(){
+  return player.speed * (player.stance === 'assault' ? STANCE.assault.speedMul : 1);
+}
+/* 突攻阵剑气有效间隔 */
+function effWaveInterval(){
+  const base = player.waveInterval;
+  if (player.stance !== 'assault') return base;
+  return base / STANCE.assault.waveRate * player.assaultWaveMul;
+}
+/* 剑矛命中判定：点到线段距离 */
+function segDist(px, py, x1, y1, x2, y2){
+  const dx = x2 - x1, dy = y2 - y1;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - x1) * dx + (py - y1) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + dx * t), py - (y1 + dy * t));
+}
+function lanceTip(){
+  const L = lanceLen();
+  return [player.x + Math.cos(player.lanceAng) * L, player.y + Math.sin(player.lanceAng) * L];
+}
+
+/* ---------------- 情境提示（一次性，可在帮助页重看） ---------------- */
+const TIPS = {
+  move:   { txt:'WASD 或方向键移动 · 飞剑自会护身迎敌', when(){ return game.time > 2; } },
+  gem:    { txt:'拾取<span class="k">灵气</span>纳满即顿悟 · 点击或 1/2/3 择法', when(){ return game.kills >= 3; } },
+  stance: { txt:'按 <span class="k">Q</span> 切换剑阵：环守护身 · 突攻破阵', when(){ return game.time >= (game.mode.endless ? 25 : 32); } },
+  brute:  { txt:'<span class="k">妖将</span>皮糙肉厚 · 或怀词缀 · 突攻矛可破甲', when(){ return enemies.some(e => e.type === 'brute'); } },
+  boss:   { txt:'妖王将临 · 蓄力冲刺前有<span class="k">红色预警线</span>', when(){ return !!game.boss || game.bossWarned; } },
+  spring: { txt:'站入<span class="k">灵泉</span>回血 · 但妖物亦将循泉而来', when(){ return game.eventStats.spring > 0; } },
+  thunder:{ txt:'<span class="k">天雷</span>可殃己亦可诛妖 · 引雷清群，勿立圈内', when(){ return game.eventStats.thunder > 0; } }
+};
+function updateTips(dt){
+  if (game.state !== 'playing') return;
+  if (game.tipT > 0){
+    game.tipT -= dt;
+    if (game.tipT <= 0) $('tipBox').classList.remove('show');
+    return;
+  }
+  game.tipDelay -= dt;
+  if (game.tipDelay > 0) return;
+  for (const id in TIPS){
+    if (settings.seenTips[id]) continue;
+    if (TIPS[id].when()){
+      settings.seenTips[id] = 1;
+      saveSettings();
+      $('tipBox').innerHTML = TIPS[id].txt;
+      $('tipBox').classList.add('show');
+      game.tipT = 5;
+      game.tipDelay = 4;   /* 两条提示至少间隔 4 秒 */
+      SFX.tip();
+      return;
+    }
+  }
+}
+
+/* ================================================================
+   五、输入（正式发布入口：无任何开发调试键）
+   ================================================================ */
+const keys = {};
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  keys[k] = true;
+  audioInit();
+  if (k === 'm'){ toggleMute(); return; }
+  if (k === 'p' || k === 'escape'){
+    if (!$('helpOv').classList.contains('hidden')){ closeHelp(); return; }
+    togglePause(); return;
+  }
+  if (k === 'h'){ toggleHelp(); return; }
+  if (game.state === 'levelup' && ['1','2','3'].includes(k)){
+    chooseCard(+k - 1); return;
+  }
+  if (k === ' ' && game.state === 'playing'){ tryDash(); return; }
+  if (k === 'q' && game.state === 'playing'){ switchStance(); return; }
+  if (k === 'enter'){
+    if (game.state === 'start') startGame();
+    else if (game.state === 'over' || game.state === 'victory') restart();
+    return;
+  }
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+addEventListener('pointerdown', audioInit);
+
+function toggleMute(){
+  muted = !muted;
+  settings.muted = muted;
+  saveSettings();
+  $('muteTag').textContent = muted ? '音效 关（M）' : '音效 开（M）';
+}
+/* 帮助页：开始界面 / 暂停 / 对局中均可重看，Esc 或 H 关闭 */
+function openHelp(){ $('helpOv').classList.remove('hidden'); }
+function closeHelp(){ $('helpOv').classList.add('hidden'); }
+function toggleHelp(){
+  if ($('helpOv').classList.contains('hidden')) openHelp(); else closeHelp();
+}
+$('helpBtn').onclick = openHelp;
+$('helpCloseBtn').onclick = closeHelp;
+muted = settings.muted;
+$('muteTag').textContent = muted ? '音效 关（M）' : '音效 开（M）';
+function togglePause(){
+  if (game.state === 'playing'){ game.state = 'paused'; $('pauseOv').classList.remove('hidden'); }
+  else if (game.state === 'paused'){ game.state = 'playing'; $('pauseOv').classList.add('hidden'); }
+}
+
+/* ---------------- 影遁（剑魔式专属主动技） ---------------- */
+function tryDash(){
+  if (pref.build !== 'shade' || game.state !== 'playing') return false;
+  if (player.dashT > 0 || player.swordWill <= 0) return false;
+  let dx = (keys['d']||keys['arrowright']?1:0) - (keys['a']||keys['arrowleft']?1:0);
+  let dy = (keys['s']||keys['arrowdown']?1:0) - (keys['w']||keys['arrowup']?1:0);
+  if (!dx && !dy){
+    const tgt = nearestEnemy(player.x, player.y);
+    if (tgt){ dx = player.x - tgt.x; dy = player.y - tgt.y; }
+    else { dx = 1; dy = 0; }
+  }
+  const m = Math.hypot(dx, dy);
+  const A = 70 + player.r;
+  const nx = Math.max(A, Math.min(W - A, player.x + dx / m * 175));
+  const ny = Math.max(A, Math.min(H - A, player.y + dy / m * 175));
+  // 残影
+  for (let i = 0; i < 8; i++){
+    const t = i / 8;
+    particles.push({ x: player.x + (nx-player.x)*t, y: player.y + (ny-player.y)*t,
+      vx: 0, vy: 0, life: .3 + t*.15, max: .45, r: 5 - t*3, color: '#b9a6e8' });
+  }
+  player.x = nx; player.y = ny;
+  player.swordWill--;
+  player.dashT = player.dashCd;
+  player.dashEmpT = 2.0;
+  player.invuln = Math.max(player.invuln, 0.3);
+  game.shake = Math.max(game.shake, 5);
+  SFX.dash();
+  return true;
+}
+
+/* ================================================================
+   六、实体逻辑
+   ================================================================ */
+function clampArena(x, y){
+  const A = 70;
+  return [Math.max(A, Math.min(W - A, x)), Math.max(A, Math.min(H - A, y))];
+}
+function spawnPos(){
+  const a = Math.random() * Math.PI * 2;
+  const d = 470 + Math.random() * 90;
+  let x = player.x + Math.cos(a) * d;
+  let y = player.y + Math.sin(a) * d;
+  x = Math.max(-40, Math.min(W + 40, x));
+  y = Math.max(-40, Math.min(H + 40, y));
+  return [x, y];
+}
+function rollAffix(e, forced){
+  if (e.type !== 'brute' || e.affix) return;
+  const chance = game.time >= 140 ? 0.35 : 0.22;
+  if (!forced && Math.random() > chance) return;
+  const pool = ['swift', 'bulwark', 'quake'];
+  e.affix = pool[Math.floor(Math.random() * pool.length)];
+  if (e.affix === 'swift'){ e.spd *= 1.9; e.hp = Math.max(1, e.hp * 0.7); e.maxHp = e.hp; }
+  if (e.affix === 'bulwark'){ e.hp *= 1.8; e.maxHp = e.hp; }
+}
+function spawnEnemy(type, at){
+  const t = TYPES[type];
+  const scale = 1 + game.time / 360;                       // 妖物随夜渐强，灵气亦渐丰
+  const bossHp = game.mode.endless
+    ? game.mode.bossHp * (1 + 0.55 * game.bossN)            // 演武局妖王复现愈强
+    : game.mode.bossHp;
+  const hp = type === 'boss' ? bossHp : t.hp * scale;
+  const xpv = type === 'boss' ? t.xp : Math.max(1, Math.round(t.xp * scale));
+  let x, y;
+  if (at){ x = at[0]; y = at[1]; }
+  else { const p = spawnPos(); x = p[0]; y = p[1]; }
+  const e = {
+    id: enemyId++, type, x, y, r: t.r,
+    hp, maxHp: hp, spd: t.spd * (0.9 + Math.random() * 0.2),
+    dmg: t.dmg, xp: xpv, flash: 0, orbCd: 0, kx: 0, ky: 0,
+    wob: Math.random() * 7, slow: 0, slowT: 0,
+    // 精英词缀（妖将专属：伏击必带；妖潮期随夜渐增概率）
+    affix: null, stompT: 0, stompR: 0, stomping: false,
+    // boss 专用
+    abT: 3, phase2: false, charging: 0, dashing: 0, dashVX: 0, dashVY: 0, dashT: 4
+  };
+  if (type === 'brute') rollAffix(e, false);
+  enemies.push(e);
+  if (type === 'boss'){
+    game.boss = e;
+    showBanner(game.mode.endless && game.bossN > 0 ? '妖 王 复 临 · 气焰更炽' : '妖 王 将 至', 4);
+  }
+  return e;
+}
+function pickType(t){
+  const r = Math.random();
+  if (t < 120) return 'imp';
+  if (t < 240) return r < .65 ? 'imp' : 'wolf';
+  if (t < 360) return r < .48 ? 'imp' : r < .88 ? 'wolf' : 'brute';
+  if (t < 480) return r < .26 ? 'imp' : r < .56 ? 'wolf' : r < .88 ? 'wraith' : 'brute';
+  if (t < 900) return r < .22 ? 'imp' : r < .46 ? 'wolf' : r < .78 ? 'wraith' : 'brute';
+  return r < .12 ? 'wolf' : r < .42 ? 'wraith' : 'brute';   /* 演武局深层：妖将妖魂为主 */
+}
+function updateSpawns(dt){
+  // 妖王（按模式时间表；演武局复现机制）
+  const m = game.mode;
+  if (m.endless){
+    if (!game.boss || game.boss.dead){
+      if (game.bossNextAt == null) game.bossNextAt = game.time + 20;   /* 妖王殒后 20 秒复临 */
+    }
+    if (game.bossNextAt != null && game.time >= game.bossNextAt - 6 && !game.bossWarned){
+      game.bossWarned = true; showBanner('天 地 变 色 · 妖 王 窥 阵', 4.5); SFX.warn();
+    }
+    if (game.bossNextAt != null && game.time >= game.bossNextAt && !game.boss){
+      game.bossNextAt = null; game.bossWarned = false;
+      spawnEnemy('boss');
+    }
+  } else {
+    if (game.time >= m.warnAt && !game.bossWarned){
+      game.bossWarned = true; showBanner('天 地 变 色 · 妖 王 窥 阵', 4.5); SFX.warn();
+    }
+    if (game.time >= m.bossAt && !game.bossSpawned){
+      game.bossSpawned = true; spawnEnemy('boss');
+    }
+  }
+  // 事件调度
+  while (game.eventQueue.length && game.time >= game.eventQueue[0].t){
+    triggerEvent(game.eventQueue.shift().type);
+  }
+  // 常规妖物（灵泉期间妖物被吸引，刷新加速）
+  game.spawnT -= dt;
+  if (game.spawnT <= 0){
+    let interval = Math.max(0.42, 1.1 - game.time * 0.00125);
+    if (game.springActive) interval /= 1.6;
+    game.spawnT = interval;
+    if (enemies.length < 280){
+      const n = 1 + Math.min(3, Math.floor(game.time / 150));
+      for (let i = 0; i < n; i++) spawnEnemy(pickType(game.time));
+    }
+  }
+  updatePhases();
+  updateTips(dt);
+}
+
+/* ---------------- 三类事件 ---------------- */
+function triggerEvent(type){
+  game.eventStats[type] = (game.eventStats[type] || 0) + 1;
+  if (type === 'ambush'){
+    // 同方向妖群伏击：影响走位路线
+    showBanner('妖 群 伏 击', 3);
+    SFX.warn();
+    const a = Math.random() * Math.PI * 2;
+    const n = game.mode.dur > 400 ? 12 : 8;
+    for (let i = 0; i < n; i++){
+      const aa = a + (i - (n - 1) / 2) * 0.09;
+      const e = spawnEnemy('wolf');
+      e.x = Math.max(-40, Math.min(W + 40, player.x + Math.cos(aa) * 540));
+      e.y = Math.max(-40, Math.min(H + 40, player.y + Math.sin(aa) * 540));
+    }
+    const b = spawnEnemy('brute');
+    b.x = Math.max(-40, Math.min(W + 40, player.x + Math.cos(a) * 580));
+    b.y = Math.max(-40, Math.min(H + 40, player.y + Math.sin(a) * 580));
+    rollAffix(b, true);   /* 伏击妖将必带词缀 */
+  } else if (type === 'spring'){
+    // 灵泉：站泉回血，但妖物加速涌来 —— 资源抉择
+    showBanner('灵 泉 涌 现 · 二 十 息', 3);
+    SFX.spring();
+    const a = Math.random() * Math.PI * 2, d = 180 + Math.random() * 240;
+    const [x, y] = clampArena(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d);
+    game.activeEvents.push({ type:'spring', x, y, r:90, t:20, ht:0, spawnT:2 });
+  } else if (type === 'thunder'){
+    // 天雷示警：场地危机，落雷可伤敌亦可伤己
+    showBanner('天 雷 示 警', 3);
+    SFX.warn();
+    game.activeEvents.push({ type:'thunder', t:8, next:0.8 });
+  }
+}
+function updateEvents(dt){
+  game.springActive = false;
+  for (const ev of game.activeEvents){
+    ev.t -= dt;
+    if (ev.type === 'spring'){
+      game.springActive = true;
+      const d = Math.hypot(player.x - ev.x, player.y - ev.y);
+      if (d < ev.r + player.r){
+        ev.ht += dt;
+        while (ev.ht >= 0.25){
+          ev.ht -= 0.25;
+          player.hp = Math.min(player.maxHp, player.hp + 1);
+        }
+      }
+      // 灵气吸引妖物
+      ev.spawnT -= dt;
+      if (ev.spawnT <= 0){
+        ev.spawnT = 2;
+        if (enemies.length < 280){
+          spawnEnemy('imp'); spawnEnemy('imp');
+        }
+      }
+    } else if (ev.type === 'thunder'){
+      ev.next -= dt;
+      if (ev.next <= 0){
+        ev.next = 1.2;
+        const a = Math.random() * Math.PI * 2, d = Math.random() * 180;
+        const [x, y] = clampArena(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d);
+        strikes.push({ x, y, r:70, warn:1.2, struck:false, strikeT:0.35 });
+      }
+    }
+  }
+  game.activeEvents = game.activeEvents.filter(e => e.t > 0);
+  // 落雷结算
+  for (const s of strikes){
+    if (!s.struck){
+      s.warn -= dt;
+      if (s.warn <= 0){
+        s.struck = true;   // 只结算一次
+        if (Math.hypot(player.x - s.x, player.y - s.y) < s.r + player.r * 0.4){
+          hurtPlayer(20, '天雷');
+        }
+        for (const e of enemies){
+          if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) < s.r + e.r) damage(e, 40, 'thunder');
+        }
+        game.shake = Math.max(game.shake, 8);
+        SFX.thunder();
+        for (let i = 0; i < 10; i++){
+          const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 180;
+          particles.push({ x: s.x, y: s.y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp,
+            life: .4, max: .4, r: 2, color: '#cfe6ff' });
+        }
+      }
+    } else {
+      s.strikeT -= dt;
+    }
+  }
+  strikes = strikes.filter(s => !s.struck || s.strikeT > 0);
+}
+
+/* ---------------- Boss 双阶段 ---------------- */
+function bossUpdate(e, dt){
+  // 阶段切换（只触发一次）
+  if (!e.phase2 && e.hp <= e.maxHp * 0.5){
+    e.phase2 = true;
+    game.bossPhase2Count++;
+    showBanner('妖 王 狂 怒 · 妖 火 燎 原', 3.5);
+    SFX.warn();
+    game.shake = Math.max(game.shake, 12);
+  }
+  if (!e.phase2){
+    // 一阶段：妖嚎召妖
+    e.abT -= dt;
+    if (e.abT <= 0){
+      e.abT = 5;
+      for (let i = 0; i < 3; i++){
+        const a = Math.random() * Math.PI * 2;
+        spawnEnemy('imp', [e.x + Math.cos(a) * 50, e.y + Math.sin(a) * 50]);
+      }
+      SFX.shot();
+    }
+  } else {
+    // 二阶段：环形妖火弹幕
+    e.abT -= dt;
+    if (e.abT <= 0){
+      e.abT = 4;
+      const n = 8, base = Math.random() * Math.PI;
+      for (let i = 0; i < n; i++){
+        const a = base + i * Math.PI * 2 / n;
+        bossShots.push({ x: e.x, y: e.y, vx: Math.cos(a) * 170, vy: Math.sin(a) * 170, r: 9, life: 3.5 });
+      }
+      SFX.shot();
+    }
+    // 二阶段：蓄力冲刺
+    if (e.charging > 0){
+      e.charging -= dt;
+      e.dashVX = Math.cos(Math.atan2(player.y - e.y, player.x - e.x));
+      e.dashVY = Math.sin(Math.atan2(player.y - e.y, player.x - e.x));
+      if (e.charging <= 0) e.dashing = 0.45;
+    } else if (e.dashing > 0){
+      e.dashing -= dt;
+      e.x += e.dashVX * 620 * dt;
+      e.y += e.dashVY * 620 * dt;
+    } else {
+      e.dashT -= dt;
+      if (e.dashT <= 0){ e.charging = 0.6; e.dashT = 7; }
+    }
+  }
+  // bossShots 更新
+  for (const s of bossShots){
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (Math.hypot(player.x - s.x, player.y - s.y) < s.r + player.r){
+      if (hurtPlayer(15, '妖火')) s.dead = true;
+    }
+  }
+  bossShots = bossShots.filter(s => s.life > 0 && !s.dead);
+}
+
+function nearestEnemy(x, y){
+  let best = null, bd = 1e9;
+  for (const e of enemies){
+    const d = (e.x - x) ** 2 + (e.y - y) ** 2;
+    if (d < bd){ bd = d; best = e; }
+  }
+  return best;
+}
+function damage(e, amt, src){
+  /* 铁壁词缀：剑气类伤害减四分之一（逼近战矛/环剑破甲） */
+  if (e.affix === 'bulwark' && src === 'wave') amt *= 0.75;
+  e.hp -= amt; e.flash = 0.09;
+  dmgTexts.push({ x: e.x + (Math.random()*16-8), y: e.y - e.r, txt: Math.round(amt), life: .7, max: .7,
+    color: src === 'lance' ? '#ffd9a0' : '#ffd77a' });
+  if (e.hp <= 0) killEnemy(e);
+}
+function hurtPlayer(amt, src){
+  if (player.invuln > 0) return false;
+  player.hp -= amt;
+  player.invuln = 0.6;
+  player.hurtFx = 1;
+  player.lastDmgSrc = src || '妖物';
+  game.shake = Math.max(game.shake, 9);
+  SFX.hurt();
+  dmgTexts.push({ x: player.x, y: player.y - 26, txt: '-' + amt, life: .8, max: .8, color: '#ff7a5a' });
+  if (player.hp <= 0){ player.hp = 0; die(); }
+  return true;
+}
+function killEnemy(e){
+  if (e.dead) return;
+  e.dead = true;
+  game.kills++;
+  if (e.type === 'boss'){ game.bossSlain++; game.bossN++; }
+  // 剑气回涌（剑卫式）：击杀几率迸发冲击波
+  if (pref.build === 'guard' && player.surge > 0 && Math.random() < player.surge){
+    shocks.push({ x: e.x, y: e.y, r: 12, maxR: 120 * player.surgeMul,
+      life: 0.35, dmg: 24 * player.surgeMul, hit: new Set() });
+  }
+  // 剑意积累（剑魔式；突攻阵下每两次击杀额外积攒）
+  if (pref.build === 'shade'){
+    player.willProg++;
+    if (player.stance === 'assault' && player.assaultWill > 0){
+      player.assaultKillC++;
+      if (player.assaultKillC % 2 === 0) player.willProg += player.assaultWill;
+    }
+    if (player.willProg >= player.willPer && player.swordWill < player.maxWill){
+      player.willProg = 0;
+      player.swordWill++;
+    }
+  }
+  // 灵气（超限则并入最近的宝石）
+  gems.push({ x: e.x, y: e.y, v: e.xp, r: e.type === 'boss' ? 9 : 5, big: e.type === 'boss', t: Math.random()*7 });
+  if (gems.length > 350) { const old = gems.shift(); if (gems.length) gems[gems.length-1].v += old.v; }
+  // 丹药
+  const pChance = e.type === 'boss' ? 1 : 0.12;
+  const pN = e.type === 'boss' ? 3 : 1;
+  if (Math.random() < pChance){
+    for (let i = 0; i < pN; i++)
+      potions.push({ x: e.x + (Math.random()*50-25), y: e.y + (Math.random()*50-25), r: 9 });
+  }
+  // 粒子
+  const n = e.type === 'boss' ? 40 : 7;
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2, s = 40 + Math.random() * (e.type==='boss'?260:120);
+    particles.push({ x: e.x, y: e.y, vx: Math.cos(a)*s, vy: Math.sin(a)*s,
+      life: .5 + Math.random()*.4, max: .9, r: 1.5 + Math.random()*2.5, color: e.type==='wraith' ? '#b7a6ff' : '#e0503a' });
+  }
+  sfxKill();
+}
+function gainXp(v){
+  player.xp += v * player.xpMul;
+}
+function maybeLevel(){
+  if (game.state !== 'playing' || player.xp < player.xpNeed) return;
+  let n = 0;
+  while (player.xp >= player.xpNeed){
+    player.xp -= player.xpNeed;
+    player.level++;
+    player.xpNeed = 5 + player.level * 3;
+    n++;
+  }
+  game.pending = n;
+  openCards();
+}
+
+/* ---------------- 升级选卡 ---------------- */
+let cardOptions = [];
+function openCards(){
+  const pool = buildPool().filter(u => u.lv < u.max);
+  if (!pool.length){
+    player.hp = Math.min(player.maxHp, player.hp + 30);
+    dmgTexts.push({ x: player.x, y: player.y - 30, txt: '+30', life: 1, max: 1, color: '#8ef0a0' });
+    SFX.potion();
+    game.pending--;
+    if (game.pending > 0) setTimeout(openCards, 0); else resumeGame();
+    return;
+  }
+  game.state = 'levelup';
+  SFX.levelup();
+  const shuffled = pool.slice().sort(() => Math.random() - .5);
+  cardOptions = shuffled.slice(0, 3);
+  const row = $('cardRow');
+  row.innerHTML = '';
+  cardOptions.forEach((u, i) => {
+    const d = document.createElement('div');
+    d.className = 'card' + (u.bonus ? ' bonus' : '');
+    d.innerHTML = `<div class="k">[${i+1}]${u.bonus ? ' 本命' : ''}</div><h3>${u.name}</h3>
+      <div class="lv">${u.lv === 0 ? '初悟' : '第' + CN_NUM[Math.min(u.lv+1,6)] + '层 → ' + (u.lv+1 === u.max ? '圆满' : '')}</div>
+      <p>${u.desc}</p>`;
+    d.onclick = () => chooseCard(i);
+    row.appendChild(d);
+  });
+  $('cards').classList.remove('hidden');
+}
+function chooseCard(i){
+  if (game.state !== 'levelup' || !cardOptions[i]) return;
+  const u = cardOptions[i];
+  u.apply(); u.lv++;
+  SFX.pick();
+  game.pending--;
+  if (game.pending > 0){ openCards(); return; }
+  $('cards').classList.add('hidden');
+  resumeGame();
+}
+function resumeGame(){
+  game.state = 'playing';
+  $('cards').classList.add('hidden');
+}
+
+/* ================================================================
+   七、更新
+   ================================================================ */
+function update(dt){
+  game.time += dt;
+  if (game.time >= game.mode.dur){ win(); return; }
+  updateSpawns(dt);
+  updateEvents(dt);
+
+  /* ---- 玩家 ---- */
+  let dx = (keys['d']||keys['arrowright']?1:0) - (keys['a']||keys['arrowleft']?1:0);
+  let dy = (keys['s']||keys['arrowdown']?1:0) - (keys['w']||keys['arrowup']?1:0);
+  if (dx || dy){
+    const m = Math.hypot(dx, dy);
+    player.x += dx / m * effSpeed() * dt;
+    player.y += dy / m * effSpeed() * dt;
+  }
+  const A = 70 + player.r;
+  player.x = Math.max(A, Math.min(W - A, player.x));
+  player.y = Math.max(A, Math.min(H - A, player.y));
+  player.invuln = Math.max(0, player.invuln - dt);
+  player.hurtFx = Math.max(0, player.hurtFx - dt * 2.2);
+  player.dashT = Math.max(0, player.dashT - dt);
+  player.dashEmpT = Math.max(0, player.dashEmpT - dt);
+  player.stanceCd = Math.max(0, player.stanceCd - dt);
+  if (player.regen > 0){
+    player.regenTimer += dt;
+    while (player.regenTimer >= 4){
+      player.regenTimer -= 4;
+      player.hp = Math.min(player.maxHp, player.hp + player.regen);
+    }
+  }
+
+  /* ---- 环剑 / 剑矛（两仪剑阵） ---- */
+  if (player.stance === 'guard'){
+    /* 环守阵：环剑绕身（影遁强化期转速翻倍） */
+    player.orbitAngle += player.orbitSpeed * (player.dashEmpT > 0 ? 2 : 1) * dt;
+    const nBlades = player.orbitCount;
+    for (let i = 0; i < nBlades; i++){
+      const ang = player.orbitAngle + i * Math.PI * 2 / nBlades;
+      const bx = player.x + Math.cos(ang) * player.orbitR;
+      const by = player.y + Math.sin(ang) * player.orbitR;
+      for (const e of enemies){
+        if (e.dead || e.orbCd > 0) continue;
+        const d = Math.hypot(e.x - bx, e.y - by);
+        if (d < e.r + 13){
+          e.orbCd = 0.5;
+          damage(e, player.orbitDmg * effDmgMul(), 'orbit');
+          const ka = Math.atan2(e.y - player.y, e.x - player.x);
+          e.kx += Math.cos(ka) * 130; e.ky += Math.sin(ka) * 130;
+          particles.push({ x: bx, y: by, vx: Math.cos(ang+1.6)*80, vy: Math.sin(ang+1.6)*80,
+            life: .25, max: .25, r: 2, color: '#9ff0e2' });
+          sfxHit();
+        }
+      }
+    }
+  } else {
+    /* 突攻阵：飞剑合矛，指向移向（无移向则指最近敌），平滑转向 */
+    let tx = 0, ty = 0, hasDir = false;
+    if (dx || dy){ const m = Math.hypot(dx, dy); tx = dx / m; ty = dy / m; hasDir = true; }
+    else {
+      const tgt = nearestEnemy(player.x, player.y);
+      if (tgt){
+        const d = Math.hypot(tgt.x - player.x, tgt.y - player.y) || 1;
+        tx = (tgt.x - player.x) / d; ty = (tgt.y - player.y) / d; hasDir = true;
+      }
+    }
+    if (hasDir){
+      const ta = Math.atan2(ty, tx);
+      let da = ta - player.lanceAng;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      const mt = lanceTurn() * dt;
+      player.lanceAng += Math.max(-mt, Math.min(mt, da));
+    }
+    /* 矛沿线突刺（单敌受击冷却） */
+    player.lanceTick -= dt;
+    if (player.lanceTick <= 0){
+      player.lanceTick = STANCE.assault.tick;
+      const [lx, ly] = lanceTip();
+      const w = lanceWidth() / 2;
+      for (const e of enemies){
+        if (e.dead || e.orbCd > 0) continue;
+        if (segDist(e.x, e.y, player.x, player.y, lx, ly) < w + e.r){
+          e.orbCd = STANCE.assault.hitCd;
+          let dmg = player.orbitDmg * STANCE.assault.dmgMul * effDmgMul();
+          if (e.type === 'brute' || e.type === 'boss') dmg *= player.lanceEliteMul;
+          damage(e, dmg, 'lance');
+          const ka = player.lanceAng;
+          e.kx += Math.cos(ka) * 150; e.ky += Math.sin(ka) * 150;
+          particles.push({ x: e.x, y: e.y, vx: Math.cos(ka+1.6)*90, vy: Math.sin(ka+1.6)*90,
+            life: .22, max: .22, r: 2, color: '#ffd9a0' });
+          sfxHit();
+        }
+      }
+    }
+  }
+
+  /* ---- 剑气（可分光两道；突攻阵自矛尖迸发且更密） ---- */
+  player.waveTimer -= dt;
+  if (player.waveTimer <= 0){
+    const tgt = nearestEnemy(player.x, player.y);
+    if (tgt){
+      player.waveTimer = effWaveInterval();
+      fireWave(tgt);
+      if (player.waveSplit){
+        let second = null;
+        for (const e of enemies){
+          if (e.dead || e === tgt) continue;
+          const a1 = Math.atan2(tgt.y - player.y, tgt.x - player.x);
+          const a2 = Math.atan2(e.y - player.y, e.x - player.x);
+          let diff = Math.abs(a1 - a2);
+          if (diff > Math.PI) diff = Math.PI * 2 - diff;
+          if (diff > 0.35){ second = e; break; }
+        }
+        fireWave(second || null, tgt);
+      }
+    } else player.waveTimer = 0.3;
+  }
+  for (const w of waves){
+    w.x += w.vx * dt; w.y += w.vy * dt; w.life -= dt;
+    for (const e of enemies){
+      if (e.dead || w.hit.has(e.id)) continue;
+      if (Math.hypot(e.x - w.x, e.y - w.y) < e.r + 14){
+        w.hit.add(e.id);
+        damage(e, w.dmg, 'wave');
+        if (player.frost && e.type !== 'boss' && !e.dead){
+          e.slow = player.frost; e.slowT = 1.2;
+        }
+      }
+    }
+  }
+  waves = waves.filter(w => w.life > 0);
+
+  /* ---- 剑气回涌 / 两仪归一冲击波 ---- */
+  for (const s of shocks){
+    s.r += (s.maxR - s.r) * 10 * dt;
+    s.life -= dt;
+    if (s.dmg > 0){
+      for (const e of enemies){
+        if (e.dead || s.hit.has(e.id)) continue;
+        if (Math.hypot(e.x - s.x, e.y - s.y) < s.r + e.r){
+          s.hit.add(e.id);
+          damage(e, s.dmg, 'shock');
+          const ka = Math.atan2(e.y - s.y, e.x - s.x);
+          e.kx += Math.cos(ka) * 160; e.ky += Math.sin(ka) * 160;
+        }
+      }
+    }
+  }
+  shocks = shocks.filter(s => s.life > 0);
+
+  /* ---- 敌人 ---- */
+  for (const e of enemies){
+    if (e.dead) continue;
+    e.flash = Math.max(0, e.flash - dt);
+    e.orbCd = Math.max(0, e.orbCd - dt);
+    if (e.slowT > 0) e.slowT = Math.max(0, e.slowT - dt);
+    if (e.type === 'boss'){
+      bossUpdate(e, dt);
+      // boss 移动：蓄力时定身，冲刺用冲刺向量，否则追踪（狂暴加速）
+      if (!(e.charging > 0 || e.dashing > 0)){
+        const a = Math.atan2(player.y - e.y, player.x - e.x);
+        const spd = e.spd * (e.phase2 ? 1.4 : 1) * (e.slowT > 0 ? (1 - e.slow) : 1);
+        e.x += Math.cos(a) * spd * dt;
+        e.y += Math.sin(a) * spd * dt;
+      }
+    } else {
+      const a = Math.atan2(player.y - e.y, player.x - e.x);
+      const wob = Math.sin(game.time * 2.2 + e.wob) * 0.14;
+      const spd = e.spd * (e.slowT > 0 ? (1 - e.slow) : 1);
+      e.x += Math.cos(a + wob) * spd * dt;
+      e.y += Math.sin(a + wob) * spd * dt;
+      /* 裂地词缀：跺地蓄势 1 秒（预警环）后冲击波 */
+      if (e.affix === 'quake'){
+        if (e.stomping){
+          e.stompProg += dt / 1.0;
+          if (e.stompProg >= 1){
+            e.stomping = false; e.stompT = 5.5;
+            const R = 170;
+            if (Math.hypot(player.x - e.x, player.y - e.y) < R + player.r && player.invuln <= 0){
+              hurtPlayer(Math.round(e.dmg * 0.75), '裂地冲击');
+            }
+            SFX.stompHit();
+            game.shake = Math.max(game.shake, 8);
+            shocks.push({ x: e.x, y: e.y, r: 24, maxR: R, life: .3, dmg: 0, hit: new Set() });
+            for (let i = 0; i < 12; i++){
+              const aa = Math.random() * Math.PI * 2, sp = 120 + Math.random() * 200;
+              particles.push({ x: e.x, y: e.y, vx: Math.cos(aa)*sp, vy: Math.sin(aa)*sp,
+                life: .45, max: .45, r: 2.5, color: '#ff9a5a' });
+            }
+            if (game.state !== 'playing') return;   /* 被裂地击杀则终止本帧 */
+          }
+        } else {
+          e.stompT -= dt;
+          if (e.stompT <= 0 && Math.hypot(player.x - e.x, player.y - e.y) < 520){
+            e.stomping = true; e.stompProg = 0;
+            SFX.stomp();
+          }
+        }
+      }
+    }
+    e.x += e.kx * dt; e.y += e.ky * dt;
+    e.kx *= Math.pow(0.002, dt); e.ky *= Math.pow(0.002, dt);
+    // 接触伤害（妖王冲刺时更狠；突攻阵门大开受伤加重）
+    const d = Math.hypot(player.x - e.x, player.y - e.y);
+    if (d < e.r + player.r){
+      const amp = player.stance === 'assault' ? STANCE.assault.contactAmp : 1;
+      const amt = Math.round((e.type === 'boss' && e.dashing > 0 ? e.dmg + 10 : e.dmg) * player.contactCut * amp);
+      if (player.invuln <= 0){
+        if (hurtPlayer(amt, e.affix ? '词缀妖将' : '妖物') && player.hp <= 0) return;
+      }
+    }
+  }
+  enemies = enemies.filter(e => !e.dead);
+  if (game.boss && game.boss.dead) game.boss = null;
+
+  /* ---- 灵气 ---- */
+  for (const g of gems){
+    g.t += dt;
+    const d = Math.hypot(player.x - g.x, player.y - g.y);
+    if (d < player.pickupR && d > 0.001){
+      g.x += (player.x - g.x) / d * 460 * dt;
+      g.y += (player.y - g.y) / d * 460 * dt;
+    } else if (d < player.pickupR * 2.6 && d > 0.001){
+      // 软磁吸：远处灵气缓缓来投，缓解远程击杀的经验断档
+      g.x += (player.x - g.x) / d * 140 * dt;
+      g.y += (player.y - g.y) / d * 140 * dt;
+    }
+    if (d < player.r + 10){
+      g.dead = true;
+      gainXp(g.v);
+      sfxGem();
+      particles.push({ x: g.x, y: g.y, vx: 0, vy: -60, life: .3, max: .3, r: 2.5, color: '#7ef0dc' });
+    }
+  }
+  gems = gems.filter(g => !g.dead);
+
+  /* ---- 丹药 ---- */
+  for (const p of potions){
+    const d = Math.hypot(player.x - p.x, player.y - p.y);
+    if (d < 150 && d > 0.001){                      // 丹药缓慢来投
+      p.x += (player.x - p.x) / d * 200 * dt;
+      p.y += (player.y - p.y) / d * 200 * dt;
+    }
+    if (d < player.r + p.r + 4){
+      p.dead = true;
+      player.hp = Math.min(player.maxHp, player.hp + 15);
+      SFX.potion();
+      dmgTexts.push({ x: player.x, y: player.y - 26, txt: '+15', life: .9, max: .9, color: '#8ef0a0' });
+    }
+  }
+  potions = potions.filter(p => !p.dead);
+
+  /* ---- 粒子与伤害数字 ---- */
+  for (const p of particles){
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vx *= Math.pow(.1, dt); p.vy *= Math.pow(.1, dt);
+    p.life -= dt;
+  }
+  particles = particles.filter(p => p.life > 0);
+  for (const t of dmgTexts){ t.y -= 34 * dt; t.life -= dt; }
+  dmgTexts = dmgTexts.filter(t => t.life > 0);
+
+  game.shake = Math.max(0, game.shake - dt * 26);
+  if (game.bannerT > 0){
+    game.bannerT -= dt;
+    if (game.bannerT <= 0) $('banner').classList.remove('show');
+  }
+
+  maybeLevel();
+}
+function fireWave(tgt, fallbackTgt){
+  const t = tgt || fallbackTgt;
+  if (!t) return;
+  /* 突攻阵：剑气自矛尖迸发（射程前推） */
+  let ox = player.x, oy = player.y;
+  if (player.stance === 'assault'){
+    ox = player.x + Math.cos(player.lanceAng) * lanceLen() * 0.75;
+    oy = player.y + Math.sin(player.lanceAng) * lanceLen() * 0.75;
+  }
+  let a = Math.atan2(t.y - oy, t.x - ox);
+  if (!tgt && fallbackTgt) a += 0.35;   // 无第二目标时扇形补射
+  waves.push({ x: ox, y: oy, vx: Math.cos(a)*440, vy: Math.sin(a)*440,
+    angle: a, life: 1.3, dmg: player.waveDmg * effDmgMul(), hit: new Set() });
+  SFX.whoosh();
+}
+
+/* ================================================================
+   八、渲染
+   ================================================================ */
+function render(){
+  ctx.save();
+  if (game.shake > 0.3){
+    ctx.translate((Math.random()-.5) * game.shake, (Math.random()-.5) * game.shake);
+  }
+  ctx.drawImage(SPR.bg, 0, 0);
+
+  const dur = game.mode ? game.mode.dur : 600;
+  // 破晓渐亮
+  if (game.time > dur - 120){
+    const a = Math.min(1, (game.time - (dur - 120)) / 120);
+    const dawn = ctx.createLinearGradient(0, 0, 0, H);
+    dawn.addColorStop(0, `rgba(255,196,120,${a * .22})`);
+    dawn.addColorStop(1, `rgba(255,196,120,0)`);
+    ctx.fillStyle = dawn; ctx.fillRect(0, 0, W, H);
+    /* 破晓仪式：终局 30 秒光柱摇曳、天光脉动 */
+    if (game.time > dur - 30){
+      const p = Math.min(1, (game.time - (dur - 30)) / 30);
+      const pulse = .5 + .5 * Math.sin(game.time * 2.6);
+      const gr = radial(ctx, W/2, -120, 620,
+        [[0, `rgba(255,224,160,${(.20 + p * .30) * (.7 + pulse * .3)})`],
+         [.6, `rgba(255,210,140,${(.10 + p * .16) * (.7 + pulse * .3)})`],
+         [1, 'rgba(255,210,140,0)']]);
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, 0, W, H);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.translate(W/2, -140);
+      for (let i = -3; i <= 3; i++){
+        const sway = Math.sin(game.time * .8 + i) * .06;
+        ctx.save();
+        ctx.rotate(i * .16 + sway);
+        const rg = ctx.createLinearGradient(0, 0, 0, 760);
+        rg.addColorStop(0, `rgba(255,230,170,${.05 + p * .09})`);
+        rg.addColorStop(1, 'rgba(255,230,170,0)');
+        ctx.fillStyle = rg;
+        ctx.fillRect(-26, 0, 52, 760);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  } else if (game.mode && game.mode.endless){
+    /* 演武局：夜色随波次愈深 */
+    const a = Math.min(.30, game.time / 2400);
+    ctx.fillStyle = `rgba(2,3,8,${a})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 灵泉（地面层）
+  for (const ev of game.activeEvents){
+    if (ev.type !== 'spring') continue;
+    const pulse = 1 + Math.sin(game.time * 3) * 0.06;
+    ctx.fillStyle = 'rgba(99,230,210,.10)';
+    ctx.beginPath(); ctx.arc(ev.x, ev.y, ev.r * pulse, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(99,230,210,.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ev.x, ev.y, ev.r * pulse, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(160,255,240,.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ev.x, ev.y, ev.r * 0.55 * pulse, 0, 7); ctx.stroke();
+  }
+  // 天雷预警圈
+  for (const s of strikes){
+    if (s.struck) continue;
+    const p = 1 - s.warn / 1.2;
+    ctx.strokeStyle = `rgba(255,70,50,${.35 + p * .5})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r * (1 - p * 0.25), 0, 7); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(255,70,50,${.06 + p * .1})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
+  }
+    /* 裂地词缀预警环（妖将跺地蓄势） */
+  for (const e of enemies){
+    if (e.affix !== 'quake' || !e.stomping || e.dead) continue;
+    const p = Math.min(1, e.stompProg);
+    ctx.strokeStyle = `rgba(255,130,70,${.30 + p * .55})`;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 7]);
+    ctx.beginPath(); ctx.arc(e.x, e.y, 170, 0, 7); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(255,130,70,${.05 + p * .10})`;
+    ctx.beginPath(); ctx.arc(e.x, e.y, 170 * p, 0, 7); ctx.fill();
+  }
+
+  // 丹药 / 灵气
+  for (const p of potions) ctx.drawImage(SPR.potion, p.x - 20, p.y - 20);
+  for (const g of gems){
+    const s = g.big ? 1.7 : 1;
+    const bob = Math.sin(g.t * 3.5) * 2;
+    ctx.drawImage(SPR.gem, g.x - 18*s, g.y - 18*s + bob, 36*s, 36*s);
+  }
+  // 剑气
+  for (const w of waves){
+    ctx.save();
+    ctx.translate(w.x, w.y); ctx.rotate(w.angle);
+    ctx.globalAlpha = Math.min(1, w.life * 2);
+    const gr = ctx.createLinearGradient(-14, 0, 36, 0);
+    gr.addColorStop(0, 'rgba(99,230,220,0)');
+    gr.addColorStop(.5, 'rgba(160,255,240,.85)');
+    gr.addColorStop(1, 'rgba(255,255,255,.95)');
+    ctx.fillStyle = gr;
+    ctx.fillRect(-14, -3.5, 50, 7);
+    ctx.fillStyle = 'rgba(160,255,240,.5)';
+    ctx.beginPath(); ctx.ellipse(8, 0, 22, 9, 0, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  // 剑气回涌冲击波
+  for (const s of shocks){
+    ctx.globalAlpha = Math.max(0, s.life / 0.35);
+    ctx.strokeStyle = '#a8fff0';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(99,230,220,.35)';
+    ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(1, s.r - 6), 0, 7); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // 敌人（按 y 排序）
+  enemies.sort((a, b) => a.y - b.y);
+  for (const e of enemies){
+    const spr = SPR[e.type];
+    ctx.drawImage(spr, e.x - spr.width/2, e.y - spr.height/2);
+    if (e.flash > 0){
+      ctx.globalAlpha = .55;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 2, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    // 妖王蓄力指示线
+    if (e.type === 'boss' && e.charging > 0){
+      ctx.strokeStyle = 'rgba(255,60,40,.35)';
+      ctx.lineWidth = 30;
+      ctx.beginPath();
+      ctx.moveTo(e.x, e.y);
+      ctx.lineTo(e.x + e.dashVX * 460, e.y + e.dashVY * 460);
+      ctx.stroke();
+    }
+    // 寒霜减速标记
+    if (e.slowT > 0 && e.type !== 'boss'){
+      ctx.strokeStyle = 'rgba(140,200,255,.5)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 5, 0, 7); ctx.stroke();
+    }
+    // 精英血条
+    if (e.maxHp > 60 && e.type !== 'boss'){
+      const bw = e.r * 2.2;
+      ctx.fillStyle = 'rgba(10,10,16,.7)';
+      ctx.fillRect(e.x - bw/2, e.y - e.r - 12, bw, 4);
+      ctx.fillStyle = '#d84a3a';
+      ctx.fillRect(e.x - bw/2, e.y - e.r - 12, bw * Math.max(0, e.hp) / e.maxHp, 4);
+    }
+    // 词缀标记（疾 / 壁 / 裂）
+    if (e.affix){
+      const af = AFFIXES[e.affix];
+      ctx.font = 'bold 14px "Microsoft YaHei", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 3;
+      ctx.strokeText(af.mark, e.x, e.y - e.r - 22);
+      ctx.fillStyle = af.tint;
+      ctx.fillText(af.mark, e.x, e.y - e.r - 22);
+      ctx.strokeStyle = af.tint + '66';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, 7); ctx.stroke();
+    }
+  }
+  // 妖王弹幕（带尾迹，降低遮挡感）
+  for (const s of bossShots){
+    ctx.globalAlpha = .30;
+    ctx.strokeStyle = '#ff8a5a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(s.x - s.vx * .07, s.y - s.vy * .07);
+    ctx.lineTo(s.x, s.y);
+    ctx.stroke();
+    ctx.globalAlpha = .88;
+    ctx.drawImage(SPR.shot, s.x - 14, s.y - 14);
+    ctx.globalAlpha = 1;
+  }
+  // 环剑 / 剑矛（两仪剑阵）
+  if (player.stance === 'guard'){
+    const nB = player.orbitCount;
+    for (let i = 0; i < nB; i++){
+      const ang = player.orbitAngle + i * Math.PI * 2 / nB;
+      const bx = player.x + Math.cos(ang) * player.orbitR;
+      const by = player.y + Math.sin(ang) * player.orbitR;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(ang + Math.PI / 2);
+      ctx.drawImage(SPR.blade, -44, -16);
+      ctx.restore();
+    }
+    ctx.strokeStyle = 'rgba(99,230,220,.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.orbitR, 0, 7); ctx.stroke();
+  } else {
+    const L = lanceLen(), w = lanceWidth();
+    const [tx, ty] = lanceTip();
+    /* 矛气光带 */
+    const gr = ctx.createLinearGradient(player.x, player.y, tx, ty);
+    gr.addColorStop(0, 'rgba(255,206,122,0)');
+    gr.addColorStop(1, 'rgba(255,206,122,.30)');
+    ctx.strokeStyle = gr; ctx.lineWidth = w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(tx, ty); ctx.stroke();
+    /* 飞剑沿矛列阵 */
+    const n = player.orbitCount;
+    for (let i = 0; i < n; i++){
+      const t0 = (i + 1) / (n + 1);
+      const bx = player.x + (tx - player.x) * t0, by = player.y + (ty - player.y) * t0;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(player.lanceAng);
+      ctx.drawImage(SPR.blade, -44, -16);
+      ctx.restore();
+    }
+    /* 矛尖锋芒 */
+    ctx.fillStyle = 'rgba(255,235,180,.92)';
+    ctx.beginPath(); ctx.arc(tx, ty, 4 + w * .14, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,206,122,.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(tx, ty, 9 + w * .18, 0, 7); ctx.stroke();
+  }
+  // 玩家（影遁强化紫光）
+  if (player.dashEmpT > 0){
+    ctx.fillStyle = `rgba(185,166,232,${.25 * Math.min(1, player.dashEmpT)})`;
+    ctx.beginPath(); ctx.arc(player.x, player.y, 46, 0, 7); ctx.fill();
+  }
+  const blink = player.invuln > 0 ? .35 + .65 * Math.abs(Math.sin(player.invuln * 22)) : 1;
+  ctx.globalAlpha = blink;
+  ctx.drawImage(SPR.player, player.x - 56, player.y - 56);
+  ctx.globalAlpha = 1;
+  // 剑阵识别环：环守青 / 突攻金
+  ctx.strokeStyle = player.stance === 'assault'
+    ? 'rgba(255,206,122,.40)' : 'rgba(99,230,210,.28)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(player.x, player.y, 27, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(99,230,210,.06)';
+  ctx.beginPath(); ctx.arc(player.x, player.y, player.pickupR, 0, 7); ctx.stroke();
+
+  // 粒子
+  for (const p of particles){
+    ctx.globalAlpha = Math.max(0, p.life / p.max);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // 落雷闪电线
+  for (const s of strikes){
+    if (!s.struck) continue;
+    ctx.globalAlpha = Math.max(0, s.strikeT / 0.35);
+    ctx.strokeStyle = '#dff0ff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    let x = s.x, y = 0;
+    ctx.moveTo(x, y);
+    while (y < s.y){
+      y += 42;
+      x = s.x + (Math.random() * 26 - 13);
+      ctx.lineTo(x, Math.min(y, s.y));
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  // 伤害数字
+  ctx.font = 'bold 15px "Microsoft YaHei", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  for (const t of dmgTexts){
+    ctx.globalAlpha = Math.min(1, t.life / t.max * 1.6);
+    ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.lineWidth = 3;
+    ctx.strokeText(t.txt, t.x, t.y);
+    ctx.fillStyle = t.color;
+    ctx.fillText(t.txt, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+
+  // 妖王血条（两阶段分段）
+  if (game.boss && !game.boss.dead){
+    const b = game.boss, bw = 420;
+    ctx.fillStyle = 'rgba(10,10,16,.75)';
+    ctx.fillRect(W/2 - bw/2 - 2, 82, bw + 4, 16);
+    const gr = ctx.createLinearGradient(W/2 - bw/2, 0, W/2 + bw/2, 0);
+    gr.addColorStop(0, b.phase2 ? '#a11414' : '#7a1010'); gr.addColorStop(1, '#e04a30');
+    ctx.fillStyle = gr;
+    ctx.fillRect(W/2 - bw/2, 84, bw * Math.max(0, b.hp) / b.maxHp, 12);
+    // 阶段阈值刻度
+    ctx.fillStyle = 'rgba(255,220,150,.8)';
+    ctx.fillRect(W/2 - bw/2 + bw * 0.5 - 1, 82, 2, 16);
+    ctx.fillStyle = '#ffb9a0';
+    ctx.font = '14px KaiTi, serif';
+    ctx.fillText(b.phase2 ? '妖 王 · 狂 怒' : '妖 王', W/2, 95);
+  }
+
+  ctx.restore();
+  if (player.hurtFx > 0){
+    ctx.globalAlpha = player.hurtFx;
+    ctx.drawImage(SPR.vigHurt, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+  ctx.drawImage(SPR.vigDark, 0, 0);
+  if (game.flash > 0){
+    ctx.globalAlpha = game.flash * .8;
+    ctx.fillStyle = '#ffedc0';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ================================================================
+   九、HUD 与流程
+   ================================================================ */
+function fmtTime(t){
+  t = Math.floor(t);
+  return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
+}
+function updateHUD(){
+  $('time').textContent = fmtTime(game.time);
+  $('kills').textContent = '斩妖 ' + game.kills + (game.mode && game.mode.endless && game.bossSlain ? ' · 妖王殒 ' + game.bossSlain : '');
+  $('hpFill').style.width = (player.hp / player.maxHp * 100) + '%';
+  $('hpText').textContent = Math.ceil(player.hp) + ' / ' + player.maxHp;
+  $('xpFill').style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
+  $('lvText').textContent = realmFull(player.level);
+  if (game.mode){
+    $('modeTag').innerHTML = game.mode.label + ' ｜ ' + BUILDS[pref.build].name.split(' ')[0] + '式';
+  }
+  /* 更次 / 剑阵标签：仅对局中显示 */
+  const inRun = game.state === 'playing' || game.state === 'paused' || game.state === 'levelup';
+  if (inRun){ $('phaseTag').classList.remove('hidden'); $('stanceBox').classList.remove('hidden'); }
+  else { $('phaseTag').classList.add('hidden'); $('stanceBox').classList.add('hidden'); }
+  const wb = $('willBox');
+  if (pref.build === 'shade' && game.state !== 'start'){
+    wb.classList.remove('hidden');
+    const dots = '●'.repeat(player.swordWill) + '○'.repeat(player.maxWill - player.swordWill);
+    wb.textContent = '剑意 ' + dots + (player.dashT > 0 ? ' · 遁' + Math.ceil(player.dashT) + 's' : ' · 影遁就绪');
+  } else {
+    wb.classList.add('hidden');
+  }
+}
+function showBanner(txt, dur){
+  const b = $('banner');
+  b.textContent = txt;
+  b.classList.add('show');
+  game.bannerT = dur;
+}
+function syncStartUI(){
+  const mr = $('modeRow'); mr.innerHTML = '';
+  Object.values(MODES).forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'seg' + (pref.mode === m.id ? ' on' : '');
+    const sub = m.endless
+      ? '无时限 · 妖王每 150 秒复现，愈战愈强<br>死亡即止 · 记录最长存活'
+      : `时限 ${m.dur / 60} 分钟 · 妖王 ${Math.round(m.bossAt / 60 * 10) / 10} 分现世`;
+    d.innerHTML = `<b>${m.label}</b><span>${m.brief}<br>${sub}</span>`;
+    d.onclick = () => { pref.mode = m.id; savePref(); syncStartUI(); };
+    mr.appendChild(d);
+  });
+  const br = $('buildRow'); br.innerHTML = '';
+  Object.values(BUILDS).forEach(b => {
+    const d = document.createElement('div');
+    d.className = 'seg' + (pref.build === b.id ? ' on' : '');
+    d.innerHTML = `<b>${b.name}</b><span>${b.desc}</span>`;
+    d.onclick = () => { pref.build = b.id; savePref(); syncStartUI(); };
+    br.appendChild(d);
+  });
+  const rec = loadRecords();
+  $('recLine').innerHTML =
+    `破晓最佳：${rec.dawn.plays ? `斩妖 ${rec.dawn.bestKills} · 胜 ${rec.dawn.wins}/${rec.dawn.plays}` : '无战绩'}　` +
+    `标准最佳：${rec.standard.plays ? `斩妖 ${rec.standard.bestKills} · 胜 ${rec.standard.wins}/${rec.standard.plays}` : '无战绩'}　` +
+    `演武最佳：${rec.endless.plays ? `存活 ${fmtTime(rec.endless.bestTime)} · 斩妖 ${rec.endless.bestKills}` : '无战绩'}`;
+}
+function startGame(){
+  audioInit();
+  $('startOv').classList.add('hidden');
+  resetGame();
+  updateHUD();
+}
+function restart(){
+  $('endOv').classList.add('hidden');
+  $('endOv').classList.remove('win', 'lose');
+  resetGame();
+  updateHUD();
+}
+function goHome(){
+  $('endOv').classList.add('hidden');
+  $('endOv').classList.remove('win', 'lose');
+  Object.assign(game, defaultGame());
+  game.state = 'start';
+  $('startOv').classList.remove('hidden');
+  $('tipBox').classList.remove('show');
+  syncStartUI();
+}
+function updateRecords(won){
+  const rec = loadRecords();
+  const m = rec[game.mode.id];
+  m.plays++;
+  if (won) m.wins++;
+  m.bestKills = Math.max(m.bestKills, game.kills);
+  m.bestLevel = Math.max(m.bestLevel, player.level);
+  m.bestTime = Math.max(m.bestTime, game.time);   /* 演武局的核心战绩；限时局为胜利时长 */
+  saveRecords(rec);
+  return rec;
+}
+function endScreen(won){
+  const ov = $('endOv');
+  ov.classList.remove('hidden');
+  ov.classList.add(won ? 'win' : 'lose');
+  $('endTitle').textContent = won
+    ? '破 晓 · 渡 劫 成 功'
+    : (game.mode.endless ? '演 武 · 力 竭 而 止' : '殒 阵 · 长 夜 未 明');
+  const es = game.eventStats;
+  $('endStats').innerHTML =
+    `<span class="em">${game.mode.label}</span> · ${BUILDS[pref.build].name}<br>` +
+    `存活 ${fmtTime(game.time)} 　·　 斩妖 ${game.kills} 　·　 ${realmFull(player.level)}（${player.level} 级）` +
+    (game.mode.endless ? `　·　妖王殒 ${game.bossSlain}` : '') + '<br>' +
+    (won
+      ? `渡劫于${currentPhase() ? currentPhase().name : '天明'} · 天光既白，长夜终焉`
+      : `殒阵于 ${game.deathPhase || '长夜'} · 伤于${game.deathCause || '妖物'}`) + '<br>' +
+    `历经事件：伏击×${es.ambush} · 灵泉×${es.spring} · 天雷×${es.thunder}`;
+  const dao = buildPool().filter(u => u.lv > 0)
+    .map(u => `<span>${u.name}${u.bonus ? ' · 本命' : ''} ${u.lv >= u.max ? '圆满' : u.lv + '层'}</span>`).join('');
+  $('endDao').innerHTML = dao || '<span>未悟任何道法</span>';
+  const rec = loadRecords()[game.mode.id];
+  $('endRec').textContent = game.mode.endless
+    ? `演武最佳：存活 ${fmtTime(rec.bestTime)} · 斩妖 ${rec.bestKills}（共 ${rec.plays} 战）`
+    : `本模式战绩：${rec.wins} 胜 / ${rec.plays} 战 · 最佳斩妖 ${rec.bestKills}`;
+}
+function win(){
+  if (game.state !== 'playing') return;
+  game.state = 'victory';
+  game.flash = 1;
+  SFX.victory();
+  updateRecords(true);
+  setTimeout(() => endScreen(true), 350);
+}
+function die(){
+  if (game.state !== 'playing') return;
+  game.state = 'over';
+  game.deathCause = player.lastDmgSrc || '妖物';
+  const ph = currentPhase();
+  game.deathPhase = game.mode.endless
+    ? '妖潮第' + Math.max(1, Math.floor(game.time / 90) + 1) + '阵'
+    : (ph ? ph.name : '长夜');
+  SFX.defeat();
+  updateRecords(false);
+  setTimeout(() => endScreen(false), 350);
+}
+
+$('startBtn').onclick = startGame;
+$('againBtn').onclick = restart;
+$('homeBtn').onclick = goHome;
+
+/* ================================================================
+   十、主循环
+   ================================================================ */
+Object.assign(game, defaultGame());
+syncStartUI();
+updateHUD();
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
+  if (game.state === 'playing') update(dt);
+  game.flash = Math.max(0, game.flash - dt * 1.2);
+  render();
+  updateHUD();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ================================================================
+   十一、受控自动化测试接口（__RG）
+   边界说明：本接口不提供时间跳跃、经验直给等任何开发捷径，
+   仅暴露与键鼠等价的程序化驱动（配置、逐帧步进、选卡、影遁），
+   用于 node / 浏览器自动化测试。正式玩家流程不受影响。
+   ================================================================ */
+window.__RG = {
+  ver: 3,
+  config(o){
+    if (['playing','levelup','paused'].includes(game.state)) return false;
+    if (o && o.mode && MODES[o.mode]) pref.mode = o.mode;
+    if (o && o.build && BUILDS[o.build]) pref.build = o.build;
+    savePref(); syncStartUI();
+    return true;
+  },
+  start(){ if (game.state === 'start'){ startGame(); return true; } return false; },
+  restart(){ if (game.state === 'over' || game.state === 'victory'){ restart(); return true; } return false; },
+  home(){ if (game.state === 'over' || game.state === 'victory'){ goHome(); return true; } return false; },
+  pause(){ togglePause(); return game.state; },
+  key(k, down){ keys[k] = !!down; },
+  step(dt){ if (game.state === 'playing') update(Math.min(0.033, dt || 0.0167)); },
+  choose(i){ if (game.state === 'levelup' && cardOptions[i]){ chooseCard(i); return true; } return false; },
+  dash(){ return tryDash(); },
+  switchStance(){ return switchStance(); },
+  stance(){ return player.stance; },
+  snap(){
+    return {
+      state: game.state, mode: game.mode ? game.mode.id : null, build: pref.build,
+      time: game.time, hp: player.hp, maxHp: player.maxHp, kills: game.kills, level: player.level,
+      enemies: enemies.length, gems: gems.length, pendingLevels: game.pending,
+      boss: game.boss ? { hp: game.boss.hp, maxHp: game.boss.maxHp, phase2: !!game.boss.phase2 } : null,
+      bossPhase2Count: game.bossPhase2Count, bossSlain: game.bossSlain, bossN: game.bossN,
+      events: Object.assign({}, game.eventStats),
+      eventsPending: game.eventQueue.length,
+      activeEvents: game.activeEvents.map(e => e.type),
+      strikes: strikes.length, shots: bossShots.length, shocks: shocks.length,
+      surge: player.surge, frost: player.frost, waveSplit: player.waveSplit,
+      will: player.swordWill, dashT: player.dashT,
+      orbitCount: player.orbitCount, waveInterval: player.waveInterval,
+      /* 两仪剑阵 / 更次 / 词缀 / 败因 */
+      stance: player.stance, stanceCd: player.stanceCd,
+      lance: player.stance === 'assault'
+        ? { ang: player.lanceAng, len: lanceLen(), w: lanceWidth(), tick: player.lanceTick }
+        : null,
+      phase: currentPhase() ? currentPhase().name : (game.mode && game.mode.endless
+        ? '妖潮第' + Math.max(1, Math.floor(game.time / 90) + 1) + '阵' : null),
+      phaseIdx: game.phaseIdx,
+      affixes: enemies.filter(e => e.affix && !e.dead).map(e => ({ type: e.type, affix: e.affix })),
+      affixCount: enemies.filter(e => e.affix && !e.dead).length,
+      deathCause: game.deathCause, deathPhase: game.deathPhase,
+      tipsSeen: Object.keys(settings.seenTips),
+      records: JSON.parse(JSON.stringify(loadRecords())),
+      /* 只读遥测：供自动化测试读取位置信息（走位 AI / 状态断言），不影响玩法 */
+      cards: game.state === 'levelup' ? cardOptions.map(c => c.id) : null,
+      tele: {
+        px: player.x, py: player.y, speed: effSpeed(),
+        enemies: enemies.filter(e => !e.dead).slice(0, 60)
+          .map(e => ({ x: e.x, y: e.y, t: e.type,
+                       dashing: e.dashing || 0, dvx: e.dashVX || 0, dvy: e.dashVY || 0,
+                       affix: e.affix || null, stomping: e.stomping || false })),
+        gems: gems.slice(0, 30).map(g => ({ x: g.x, y: g.y })),
+        potions: potions.map(g => ({ x: g.x, y: g.y })),
+        shots: bossShots.map(s => ({ x: s.x, y: s.y })),
+        strikes: strikes.map(s => ({ x: s.x, y: s.y, struck: s.struck })),
+        events: game.activeEvents.map(e => ({ t: e.type, x: e.x, y: e.y }))
+      }
+    };
+  }
+};
+</script>
+</body>
+</html>

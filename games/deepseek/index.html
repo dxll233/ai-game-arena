@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#040a12">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="《长夜点灯》——一款关于灯火、暗影与黎明的俯视角小游戏。点亮四座古灯，回到灯塔，守住长夜。">
+  <title>长夜点灯 · The Last Lamplighter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas" width="1280" height="720" aria-label="长夜点灯游戏画面"></canvas>
+    <div class="screen-vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div id="damageFlash" class="damage-flash" aria-hidden="true"></div>
+
+    <div id="hud" class="hud is-hidden" aria-hidden="true">
+      <div class="hud-top">
+        <div class="hud-panel vitals-panel">
+          <div class="vitals-head">
+            <span class="vitals-name">守夜人</span>
+            <div id="hearts" class="hearts" role="img" aria-label="生命值 4 / 4"></div>
+          </div>
+          <div class="oil-row">
+            <span class="oil-glyph" aria-hidden="true">◈</span>
+            <div class="oil-track" aria-hidden="true">
+              <div id="oilFill" class="oil-fill"></div>
+            </div>
+            <span id="oilValue" class="oil-value">72</span>
+          </div>
+        </div>
+
+        <div class="hud-panel night-panel">
+          <div id="timeCaption" class="time-caption">天亮之前</div>
+          <div id="timeValue" class="time-value">05:00</div>
+          <div id="lampStatus" class="lamp-status" aria-label="古灯 0 / 4">
+            <i class="lamp-dot" data-lamp="0"></i>
+            <i class="lamp-dot" data-lamp="1"></i>
+            <i class="lamp-dot" data-lamp="2"></i>
+            <i class="lamp-dot" data-lamp="3"></i>
+          </div>
+          <div id="finaleMeter" class="finale-meter" hidden>
+            <div id="finaleFill" class="finale-fill"></div>
+          </div>
+        </div>
+
+        <div class="hud-panel control-panel">
+          <div class="score-box">
+            <span class="score-label">守夜分</span>
+            <span id="scoreValue" class="score-value">0</span>
+          </div>
+          <div class="hud-actions">
+            <button id="pauseBtn" class="icon-btn" type="button" aria-label="暂停游戏" title="暂停（Esc）">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>
+            </button>
+            <button id="muteBtn" class="icon-btn sound-btn" type="button" aria-label="静音" title="静音（M）">
+              <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5z"></path><path class="sound-wave" d="M16 8.3a5 5 0 0 1 0 7.4"></path><path class="sound-wave" d="M18.6 6a8.5 8.5 0 0 1 0 12"></path></svg>
+              <svg class="icon-muted" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5z"></path><path class="slash" d="M16.5 9.5l5 5M21.5 9.5l-5 5"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="objective" class="objective">
+        <span id="modeChip" class="objective-mode">短夜</span>
+        <span class="objective-mark" aria-hidden="true">◆</span>
+        <span id="objectiveText">点亮四座古灯（0 / 4）</span>
+        <span id="stageDots" class="stage-dots" hidden aria-hidden="true">
+          <i data-stage="1"></i><i data-stage="2"></i><i data-stage="3"></i><i data-stage="4"></i><i data-stage="5"></i>
+        </span>
+      </div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"></div>
+
+      <div id="hint" class="hint">
+        <span class="hint-star" aria-hidden="true">✦</span>
+        <span id="hintText"></span>
+      </div>
+
+      <div id="interactPrompt" class="interact-prompt" aria-hidden="true">
+        <div id="interactText" class="interact-text">按住 <kbd>E</kbd> 点亮古灯</div>
+        <div class="interact-track" aria-hidden="true">
+          <div id="interactFill" class="interact-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="touchUI" class="touch-ui" aria-hidden="true">
+      <div id="moveStick" class="stick stick-move">
+        <div class="stick-base"><div class="stick-knob"></div></div>
+        <span class="stick-caption">移动</span>
+      </div>
+      <div id="aimStick" class="stick stick-aim">
+        <div class="stick-base"><div class="stick-knob"></div></div>
+        <span class="stick-caption">瞄准 / 亮灯</span>
+      </div>
+      <button id="dashBtn" class="touch-btn dash-btn" type="button" aria-label="疾步">
+        <span class="touch-glyph" aria-hidden="true">➤</span>
+        <span class="touch-label">疾步</span>
+      </button>
+      <button id="interactBtn" class="touch-btn interact-btn" type="button" aria-label="点亮古灯" disabled>
+        <span class="touch-glyph" aria-hidden="true">✦</span>
+        <span id="interactBtnLabel" class="touch-label">点灯</span>
+      </button>
+    </div>
+
+    <div id="rotateHint" class="rotate-hint" hidden>
+      <span class="rotate-icon" aria-hidden="true">▭</span>
+      <p>把屏幕横过来，长夜会更完整。</p>
+      <button id="rotateCloseBtn" class="text-btn" type="button">仍然竖屏游玩</button>
+    </div>
+
+    <div id="screens" class="screens">
+      <section id="screenTitle" class="screen title-screen">
+        <div class="title-scrim" aria-hidden="true"></div>
+        <div class="title-content">
+          <div class="lamp-mark" aria-hidden="true">
+            <span class="lamp-halo"></span>
+            <span class="lamp-body"><span class="lamp-flame"></span></span>
+            <span class="lamp-ring"></span>
+          </div>
+          <p class="eyebrow title-eyebrow">一夜 · 四灯 · 一个人</p>
+          <h1 class="game-title">长夜点灯</h1>
+          <p class="game-title-en">THE LAST LAMPLIGHTER</p>
+          <p class="title-lead">太阳沉睡了三年。今夜，四盏古灯熄灭，<br class="desktop-br">暗影从最后的村庄外醒来。</p>
+          <div class="title-actions">
+            <button id="startBtn" class="btn btn-primary" type="button">
+              <span>开始守夜</span>
+              <span class="btn-arrow" aria-hidden="true">→</span>
+            </button>
+            <button id="expeditionBtn" class="btn btn-ghost" type="button">远征模式</button>
+            <button id="howBtn" class="btn btn-ghost" type="button">如何守夜</button>
+          </div>
+          <div class="title-meta">
+            <span id="bestRecord">长夜尚未留下记录</span>
+            <span class="meta-dot" aria-hidden="true"></span>
+            <span>短夜约 45 秒 · 远征 3–5 分钟</span>
+            <span class="meta-dot" aria-hidden="true"></span>
+            <button id="titleMuteBtn" class="text-btn title-mute" type="button">声音：开</button>
+          </div>
+        </div>
+        <div class="title-corner" aria-hidden="true">
+          <span>向上走，别回头。</span>
+          <span class="corner-line"></span>
+          <span>VILLAGE AT THE END OF NIGHT</span>
+        </div>
+        <div class="title-version" aria-hidden="true">v2.0 · 第二轮 · 献给每一个守夜的人</div>
+      </section>
+
+      <section id="screenIntro" class="screen intro-screen" hidden>
+        <div class="intro-scrim" aria-hidden="true"></div>
+        <div class="intro-content">
+          <p class="eyebrow">出发 · 最后一夜</p>
+          <div class="intro-lines">
+            <p class="intro-line intro-line-1">极北的太阳，已经三年没有升起。</p>
+            <p class="intro-line intro-line-2">今夜，长灯熄灭。选择一条路线，<br>把黎明带回来。</p>
+          </div>
+
+          <div class="prep-panel" role="group" aria-label="出发准备">
+            <div class="prep-block">
+              <div class="prep-heading">
+                <span>模式</span>
+                <span id="prepModeNote">四灯 → 返塔 → 二十秒守夜</span>
+              </div>
+              <div class="mode-switch">
+                <button id="prepModeShort" class="mode-choice is-selected" type="button" data-mode="short" aria-pressed="true">
+                  <b>短夜巡守</b><small>约 45 秒</small>
+                </button>
+                <button id="prepModeExpedition" class="mode-choice" type="button" data-mode="expedition" aria-pressed="false">
+                  <b>远征长夜</b><small>3–5 分钟</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="prep-block">
+              <div class="prep-heading"><span>地图</span><span>路径与风险不同</span></div>
+              <div id="mapChoices" class="prep-choices prep-maps" role="radiogroup" aria-label="地图">
+                <button class="prep-card is-selected" type="button" data-map="village" role="radio" aria-checked="true">
+                  <span class="prep-card-top"><b>旧村四角</b><em>均衡</em></span>
+                  <span class="prep-card-desc">四角旧灯，路线直白，适合短夜。</span>
+                </button>
+                <button class="prep-card" type="button" data-map="forest" role="radio" aria-checked="false">
+                  <span class="prep-card-top"><b>林间环路</b><em>高压</em></span>
+                  <span class="prep-card-desc">四灯围环、路程更短，暗影生成 +20%。</span>
+                </button>
+                <button class="prep-card" type="button" data-map="river" role="radio" aria-checked="false">
+                  <span class="prep-card-top"><b>冻河折线</b><em>路线</em></span>
+                  <span class="prep-card-desc">两座窄桥横跨冻河；涉水减速并流失灯油。</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="prep-block">
+              <div class="prep-heading"><span>长灯</span><span>三类取舍</span></div>
+              <div id="lighthouseChoices" class="prep-choices prep-beacons" role="radiogroup" aria-label="长灯类型">
+                <button class="prep-card is-selected" type="button" data-type="ember" role="radio" aria-checked="true">
+                  <span class="prep-card-top"><b>回油灯</b><em>续航</em></span>
+                  <span class="prep-card-desc"><i>+</i>光环回油 +2/秒 <i>−</i>灯火伤害 −15%</span>
+                </button>
+                <button class="prep-card" type="button" data-type="ward" role="radio" aria-checked="false">
+                  <span class="prep-card-top"><b>守夜灯</b><em>守护</em></span>
+                  <span class="prep-card-desc"><i>+</i>光环半径 +25、伤害 +2 <i>−</i>油耗 +15%</span>
+                </button>
+                <button class="prep-card" type="button" data-type="guide" role="radio" aria-checked="false">
+                  <span class="prep-card-top"><b>引路灯</b><em>寻路</em></span>
+                  <span class="prep-card-desc"><i>+</i>目标方向、点灯快 20% <i>−</i>油上限 −12</span>
+                </button>
+              </div>
+            </div>
+
+            <p id="prepSummary" class="prep-summary">短夜巡守 · 旧村四角 · 回油灯</p>
+          </div>
+
+          <div class="intro-actions">
+            <button id="introStartBtn" class="btn btn-primary" type="button">
+              <span>踏入长夜</span>
+              <span class="btn-arrow" aria-hidden="true">→</span>
+            </button>
+            <button id="introSkipBtn" class="text-btn" type="button">返回标题</button>
+          </div>
+          <p id="introControls" class="intro-controls">WASD 移动 · 鼠标瞄准 · 按住左键亮灯 · Shift 疾步 · E 点灯</p>
+        </div>
+      </section>
+
+      <section id="screenHelp" class="screen modal-screen" hidden>
+        <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">守夜须知</p>
+              <h2 id="helpTitle">黑暗里，只有灯是真的。</h2>
+            </div>
+            <button id="helpCloseIcon" class="icon-btn modal-close" type="button" aria-label="关闭">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </button>
+          </div>
+          <div class="help-grid">
+            <div class="help-block">
+              <h3>你的任务</h3>
+              <p>点亮地图四角的四座古灯。每亮一座，都会恢复生命与灯油，并留下一圈安全的光。</p>
+            </div>
+            <div class="help-block">
+              <h3>最后一步</h3>
+              <p>四灯皆亮后回到中央灯塔，按住交互唤醒长灯，在暗影的围攻中撑过最后二十秒。</p>
+            </div>
+            <div class="help-block">
+              <h3>灯火与灯油</h3>
+              <p>微光只能自保；按住灯火可以灼退暗影，但会持续消耗灯油。拾取橙色余烬补充灯油。</p>
+            </div>
+            <div class="help-block">
+              <h3>不要被围住</h3>
+              <p>暗影接触会造成伤害。疾步有无敌帧，穿过包围往往比硬拼更聪明。</p>
+            </div>
+            <div class="help-block">
+              <h3>短夜与远征</h3>
+              <p>短夜约 45 秒。远征在四灯之后继续运油、追猎携灯影、清理缠雾者，三种长灯各有取舍。</p>
+            </div>
+            <div class="help-block">
+              <h3>新威胁</h3>
+              <p>携灯影会窃取古灯，击杀它可夺回灯芯；缠雾者先预警再封路，灯光可以驱散雾气。</p>
+            </div>
+          </div>
+          <div class="controls-wrap">
+            <div class="desktop-controls">
+              <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>移动</span></div>
+              <div><kbd>鼠标</kbd><span>瞄准</span></div>
+              <div><kbd>左键</kbd><kbd>空格</kbd><span>持续亮灯</span></div>
+              <div><kbd>Shift</kbd><span>疾步</span></div>
+              <div><kbd>E</kbd><span>点灯 / 唤醒长灯</span></div>
+              <div><kbd>Esc</kbd><span>暂停</span></div>
+            </div>
+            <div class="touch-controls">
+              <div><span class="touch-chip">左摇杆</span><span>移动</span></div>
+              <div><span class="touch-chip">右摇杆</span><span>瞄准并亮灯</span></div>
+              <div><span class="touch-chip">疾步</span><span>短暂无敌</span></div>
+              <div><span class="touch-chip">点灯</span><span>靠近古灯后按住</span></div>
+            </div>
+          </div>
+          <p class="help-note">灯火是你的武器，也是你的代价。别让灯油先于黎明耗尽。</p>
+          <button id="helpCloseBtn" class="btn btn-primary" type="button">明白了</button>
+        </div>
+      </section>
+
+      <section id="screenPause" class="screen modal-screen" hidden>
+        <div class="modal pause-modal" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+          <p class="eyebrow">守夜暂停</p>
+          <h2 id="pauseTitle">长夜还在等你。</h2>
+          <div class="pause-stats">
+            <span>已点亮 <b id="pauseLit">0</b> / 4</span>
+            <span>剩余 <b id="pauseTime">05:00</b></span>
+          </div>
+          <p id="pauseMode" class="pause-mode">短夜巡守 · 旧村四角 · 回油灯</p>
+          <div class="menu-actions">
+            <button id="resumeBtn" class="btn btn-primary" type="button">继续守夜</button>
+            <button id="pauseHelpBtn" class="btn btn-ghost" type="button">玩法与操作</button>
+            <button id="restartBtn" class="btn btn-ghost" type="button">重新开始</button>
+            <button id="quitBtn" class="text-btn menu-quit" type="button">回到标题</button>
+          </div>
+          <button id="shakeBtn" class="text-btn setting-btn" type="button">屏幕震动：开</button>
+        </div>
+      </section>
+
+      <section id="screenDefeat" class="screen modal-screen" hidden>
+        <div class="modal result-modal defeat-modal" role="dialog" aria-modal="true" aria-labelledby="defeatTitle">
+          <p class="eyebrow">守夜结束</p>
+          <h1 id="defeatTitle" class="result-title">灯灭了。</h1>
+          <p id="defeatCause" class="result-lead">黑暗漫过脚边。但夜还没有结束。</p>
+          <p id="defeatMode" class="result-meta">短夜巡守 · 旧村四角 · 回油灯</p>
+          <div class="result-stats">
+            <div><span>点亮古灯</span><b id="defeatLit">0 / 4</b></div>
+            <div><span>击退暗影</span><b id="defeatKills">0</b></div>
+            <div><span>守夜用时</span><b id="defeatTime">00:00</b></div>
+            <div><span>守夜分</span><b id="defeatScore">0</b></div>
+          </div>
+          <div class="result-actions">
+            <button id="retryBtn" class="btn btn-primary" type="button">再试一次</button>
+            <button id="defeatTitleBtn" class="btn btn-ghost" type="button">回到标题</button>
+          </div>
+          <p id="defeatHint" class="result-footnote">提示：站在已点亮的古灯旁，灯油会慢慢恢复；每点亮一盏古灯，还会恢复一颗心。</p>
+        </div>
+      </section>
+
+      <section id="screenVictory" class="screen modal-screen victory-screen" hidden>
+        <div class="dawn-rays" aria-hidden="true"></div>
+        <div class="modal result-modal victory-modal" role="dialog" aria-modal="true" aria-labelledby="victoryTitle">
+          <div class="victory-sun" aria-hidden="true"></div>
+          <p class="eyebrow">黎明 · 第一日</p>
+          <h1 id="victoryTitle" class="result-title victory-title">天亮了。</h1>
+          <p id="victoryText" class="result-lead">第一缕晨光落在灯罩上。你守住了这一夜。</p>
+          <p id="victoryMode" class="result-meta">短夜巡守 · 旧村四角 · 回油灯</p>
+          <div id="newRecord" class="new-record" hidden>新纪录</div>
+          <div class="result-stats victory-stats">
+            <div><span>守夜用时</span><b id="victoryTime">00:00</b></div>
+            <div><span>击退暗影</span><b id="victoryKills">0</b></div>
+            <div><span>收集灯油</span><b id="victoryOil">0</b></div>
+            <div><span>最终得分</span><b id="victoryScore">0</b></div>
+          </div>
+          <div class="result-actions">
+            <button id="againBtn" class="btn btn-primary" type="button">再守一夜</button>
+            <button id="victoryTitleBtn" class="btn btn-ghost" type="button">回到标题</button>
+          </div>
+          <p id="victoryRecordLine" class="result-footnote">最佳守夜 · 尚无记录</p>
+        </div>
+      </section>
+    </div>
+
+    <noscript>
+      <div class="noscript">《长夜点灯》需要启用 JavaScript 才能点亮。</div>
+    </noscript>
+  </div>
+
+  <script src="js/core.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>墨影 · 守夜人</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game" width="960" height="600"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="hp-wrap"><div id="hp-bar"></div><span id="hp-text">100 / 100</span></div>
+      <div id="timer">00:00</div>
+      <div id="kills">击杀 0</div>
+    </div>
+
+    <div id="boss-hp-wrap" class="hidden">
+      <div id="boss-name">墨君</div>
+      <div id="boss-hp-outer"><div id="boss-hp-bar"></div></div>
+    </div>
+
+    <div id="hud-bottom">
+      <div id="level-badge">Lv 1</div>
+      <div id="xp-wrap"><div id="xp-bar"></div></div>
+      <div id="weapon-icons"></div>
+    </div>
+
+    <div id="mute-flag" class="hidden">静音中</div>
+  </div>
+
+  <!-- 横幅提示 -->
+  <div id="banner"></div>
+
+  <!-- 标题界面 -->
+  <div id="title-screen" class="screen">
+    <h1>墨影 · 守夜人</h1>
+    <p class="subtitle">符火燃尽长夜，撑过五分钟的墨潮侵袭</p>
+    <div class="controls">
+      <div><b>WASD / 方向键</b>　移动走位</div>
+      <div><b>空格 / 鼠标右键</b>　冲刺（冲刺中无敌）</div>
+      <div><b>1 / 2 / 3</b>　升级三选一 · 武器满级可<b>进化</b></div>
+      <div><b>Esc</b>　暂停　　<b>M</b>　静音</div>
+    </div>
+    <button id="start-btn" class="btn">开始游戏</button>
+    <p class="hint">撑过 300 秒即守夜成功，可选择结束或继续无尽 · 武器自动攻击，活下来！</p>
+  </div>
+
+  <!-- 升级三选一 -->
+  <div id="levelup-screen" class="screen hidden">
+    <h2>星火入体 · 选择强化</h2>
+    <div id="cards"></div>
+    <p class="hint">点击卡片或按 1 / 2 / 3 选择</p>
+  </div>
+
+  <!-- 暂停 -->
+  <div id="pause-screen" class="screen hidden">
+    <h2>长夜暂歇</h2>
+    <button id="resume-btn" class="btn">继续游戏</button>
+    <button id="restart-btn" class="btn btn-ghost">重新开始</button>
+    <button id="mute-btn" class="btn btn-ghost">静音开关（M）</button>
+    <p class="hint">按 Esc 继续</p>
+  </div>
+
+  <!-- 胜利结算（300 秒达成，一次性） -->
+  <div id="victory-screen" class="screen hidden">
+    <h2 id="victory-title">守夜成功</h2>
+    <p class="subtitle">撑过五分钟墨潮，守夜目标已达成</p>
+    <div id="victory-stats"></div>
+    <div class="btn-row">
+      <button id="end-btn" class="btn">结束本局</button>
+      <button id="endless-btn" class="btn btn-ghost">继续无尽</button>
+    </div>
+    <p class="hint">纪录已结算（仅此一次）· 按 Enter 继续无尽 / 按 E 结束本局</p>
+  </div>
+
+  <!-- 结算 -->
+  <div id="gameover-screen" class="screen hidden">
+    <h2 id="over-title">长夜终结</h2>
+    <div id="over-stats"></div>
+    <div id="new-record" class="hidden">★ 新纪录 ★</div>
+    <button id="again-btn" class="btn">再来一局</button>
+    <p class="hint">按 Enter 再来一局</p>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/weapons.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

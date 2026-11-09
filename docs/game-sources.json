@@ -1,0 +1,193 @@
+[
+  {
+    "id": "deepseek",
+    "version": "2.0.0",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 19441,
+        "sha256": "b47354b377c19faa1493387c35df8e0ba5c7c6a11b098c71fa8a6d5501049644"
+      },
+      {
+        "path": "js/game.js",
+        "bytes": 128856,
+        "sha256": "82143fab779d10f868e052d6f8a6c67134b9d68a0c917fe0ed8d71ce50b005ac"
+      },
+      {
+        "path": "js/audio.js",
+        "bytes": 13417,
+        "sha256": "d655e55c9bde083dbbf67d1f4542b338fd823f07a69a8ca3bec5dbb041da6d16"
+      },
+      {
+        "path": "js/core.js",
+        "bytes": 63341,
+        "sha256": "48dfd06717d899da4691247b51f9d34c598fb4c0a476af9312a554b6802615ca"
+      },
+      {
+        "path": "styles.css",
+        "bytes": 55016,
+        "sha256": "1c2eef3e1126f1f47acc4357af53479082a93b8da86b946dcb52fa9411c728a7"
+      }
+    ]
+  },
+  {
+    "id": "kimi",
+    "version": "第二轮修复版",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 6818,
+        "sha256": "172295676375c4d534e557a0a58aae58e38bb3a5b5343daf12a60a5c2283b27f"
+      },
+      {
+        "path": "game.js",
+        "bytes": 59462,
+        "sha256": "37bf87ae14499695786876871c30c9ba36dfc64a475206d2b3f4adceee42c859"
+      },
+      {
+        "path": "style.css",
+        "bytes": 17972,
+        "sha256": "12183901c11a1727bc95c8e0c4079acf7276e32c4c506d88080978b6d5f90a9f"
+      }
+    ]
+  },
+  {
+    "id": "mimo",
+    "version": "当前版",
+    "entry": "game/index.html",
+    "files": [
+      {
+        "path": "game/index.html",
+        "bytes": 3395,
+        "sha256": "3e7a74f93c054842e84e0a3a9889de7873ae891a28da87bcd0002d5add000ca4"
+      },
+      {
+        "path": "game/js/main.js",
+        "bytes": 500,
+        "sha256": "db7e117adc908b98471fc52228b709b5ac7cb4fd755f754220a9d34a04b519d4"
+      },
+      {
+        "path": "game/js/game.js",
+        "bytes": 42096,
+        "sha256": "4520ef27b58b5e462ba08e2bc231a0aaa493c53436494bec470d218898eedf90"
+      },
+      {
+        "path": "game/js/weapons.js",
+        "bytes": 6788,
+        "sha256": "4400cf21018469b836a3a8d46880893143fba3eb79d19b91d02fdab4195e3881"
+      },
+      {
+        "path": "game/js/entities.js",
+        "bytes": 17490,
+        "sha256": "aa297cca64998414b03bc96b84961eeb66d27e043cc45bc26992bbf220cabb4a"
+      },
+      {
+        "path": "game/js/audio.js",
+        "bytes": 4219,
+        "sha256": "2272b9ab6db234910a4d9f398101cabd8eb77f96001fa3e921f12ee36acbc89a"
+      },
+      {
+        "path": "game/js/config.js",
+        "bytes": 8664,
+        "sha256": "335a53f4fc6204ec9f668cc5df955cb37422d4c5d1c7667c21a710925d62dbec"
+      },
+      {
+        "path": "game/css/style.css",
+        "bytes": 8613,
+        "sha256": "ee7582ff738ac3694344fa82fbcd863eea1aa6068e5f8b6d1c3b9bdb765a97e7"
+      }
+    ]
+  },
+  {
+    "id": "doubao",
+    "version": "2.0",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 48298,
+        "sha256": "e124f8e3aeef093aa814fa19e75faa4afbd0b1ab18698fab1970eaeafd438131"
+      }
+    ]
+  },
+  {
+    "id": "hunyuan",
+    "version": "15 关·终章守卫版",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 2345,
+        "sha256": "bd327c70b08fadffac0e9b1af4935e63fd360f4aca3deb5d00e2cce33d28ac40"
+      },
+      {
+        "path": "js/main.js",
+        "bytes": 25443,
+        "sha256": "eceecf0e1b7c965a23d69237b3f28174dc3ca7880e729dc183c33ab1be2622ee"
+      },
+      {
+        "path": "js/audio.js",
+        "bytes": 4180,
+        "sha256": "03a56b4552dcfbe746d10fde4a89d8702ae3a1014a6f20ee4ae46a89dbad4e22"
+      },
+      {
+        "path": "js/render.js",
+        "bytes": 28356,
+        "sha256": "53cd3a79f83ebd5f00c4df41aefebc0c8d8f2b8e028b33eb6b74a4a4af2dada1"
+      },
+      {
+        "path": "js/engine.js",
+        "bytes": 17914,
+        "sha256": "99159756573a9946fe89f94f85933637717e585668aae6299b82cb52ea44fa57"
+      },
+      {
+        "path": "js/levels.js",
+        "bytes": 12117,
+        "sha256": "175d9a1eebdaa425ae5c075ffa9e12c10e96d078fbb735c5fbd48858b86d6ec3"
+      },
+      {
+        "path": "css/style.css",
+        "bytes": 7894,
+        "sha256": "9d999e9620fa1bdb28c918b2da36649dbddcefac88483cf61b2edfcf30d49e38"
+      }
+    ]
+  },
+  {
+    "id": "step",
+    "version": "3.0.1",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 86251,
+        "sha256": "01e897667855056dc693e9684436ac96e29545d44b32919d42de9312490610d9"
+      }
+    ]
+  },
+  {
+    "id": "zhipu",
+    "version": "2.0",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 94935,
+        "sha256": "a160d3ab54728e2824d503aecd232673c0d141cfa967f967565894efd13f951f"
+      }
+    ]
+  },
+  {
+    "id": "qwen",
+    "version": "2",
+    "entry": "index.html",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 41494,
+        "sha256": "e53cb423bb4c39fe8b8006cb9726ae735d35d51cd2eba99cd1dfc322d2408f16"
+      }
+    ]
+  }
+]

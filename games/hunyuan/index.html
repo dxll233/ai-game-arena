@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>回响 ECHO · 时间残像解谜</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="logo">回响<span>ECHO</span></div>
+    <div class="level-tag" id="level-tag">第 1 关 · 初醒</div>
+    <div class="top-actions">
+      <button class="ghost" id="btn-levels" title="关卡选择">关卡</button>
+      <button class="ghost" id="btn-pause" title="暂停 / 继续 (P)">暂停</button>
+      <button class="ghost" id="btn-demo" title="观看参考解（不写入纪录）">参考解</button>
+      <button class="ghost" id="btn-sound" title="音效开关">♪</button>
+    </div>
+  </header>
+
+  <div class="hud">
+    <div class="stat"><b id="stat-steps">0</b><span>步数 · 目标 <i id="stat-par">0</i></span></div>
+    <div class="stat"><b id="stat-echoes">0/0</b><span>场上残像</span></div>
+    <div class="stat"><b id="stat-stars">0/0</b><span>星尘</span></div>
+    <div class="stat"><b id="stat-next">-</b><span>拍后下个残像</span></div>
+    <div class="stat"><b id="stat-anchor">—</b><span>时间锚</span></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game"></canvas>
+    <div class="overlay hidden" id="overlay"></div>
+    <div class="toast hidden" id="toast"></div>
+  </div>
+
+  <div class="pad">
+    <div class="dpad">
+      <button class="pad-btn up"    data-act="U">↑</button>
+      <button class="pad-btn left"  data-act="L">←</button>
+      <button class="pad-btn wait"  data-act="W">等待</button>
+      <button class="pad-btn right" data-act="R">→</button>
+      <button class="pad-btn down"  data-act="D">↓</button>
+    </div>
+    <div class="pad-side">
+      <button class="pad-act" id="btn-scope">预演 <kbd>V</kbd></button>
+      <button class="pad-act" id="btn-undo">撤销 <kbd>Z</kbd></button>
+      <button class="pad-act" id="btn-restart">重来 <kbd>R</kbd></button>
+    </div>
+  </div>
+
+  <div class="hint" id="hint"></div>
+</div>
+
+<script src="js/levels.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/render.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

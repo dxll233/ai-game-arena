@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+*.log
+*.jsonl
+*.zip
+*.tar.gz
+.DS_Store
+Thumbs.db
+.chrome-profile/
+/games/qwen/tests/reference_solutions.json
+/games/hunyuan/tools/guard-evidence.json
+/games/zhipu/dev.html
